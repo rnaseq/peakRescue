@@ -135,15 +135,16 @@ sub _check_tabix_overlap {
 	# deal with user defined chromosomes if any...
 	my @chr_to_analyse;
 	
-	if (!$self->options->{'a'}) {
+	if($self->options->{'chr'}) {
+                $log->debug("Option -chr: Processing user-defined list of chromosomes...");
+		open(my $chr_user, '<', $self->options->{'chr'});
+		@chr_to_analyse=<$chr_user>; 
+	}
+	elsif (!$self->options->{'a'}) {
 			$log->debug("Warning option -chr or  -a : Chromosomes to analyse not defined");
 			$log->debug("using standard list of chromosomes defined for Human [ 1..22,X,Y,MT]");
 			$log->debug("To process all chromosmes in a GTF file please provide option -a ");
 		} 
-	elsif($self->options->{'chr'}) {
-		open(my $chr_user, '<', $self->options->{'chr'});
-		@chr_to_analyse=<$chr_user>; 
-	}
 	elsif(defined $self->options->{'a'}) {
 			$log->debug("Processing all chromosomes");
 	}
