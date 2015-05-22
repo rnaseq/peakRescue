@@ -1,0 +1,5 @@
+#!/exports/work/vet_roslin_arkingen/shriram/software/Python2.7/bin/python2.7
+
+import HTSeq.scripts.qa
+
+HTSeq.scripts.qa.main()
