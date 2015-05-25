@@ -193,8 +193,10 @@ def get_dict_gene_name_value(fh_input, tag_type="not_htseq"):
 	lines = fh_input.readlines()
 	if tag_type == "htseq_original":
 		lines = lines[:-5] 
-	if tag_type == "proportions":
-		lines = lines[1:] 
+	elif tag_type == "proportions":
+		lines = lines[1:]
+	else:		
+		lines = lines[1:]
 	for line in lines:
 		fields = line.split("\t")
 		fields = [f.strip() for f in fields]
@@ -398,7 +400,7 @@ def peakrescue_probabilistic_assignment(main_dir, peak_filename, mappings_reads2
 	fh_unique_peak = open(peak_filename, 'r')
 	dict_gene_unique_peak = get_dict_gene_name_value(fh_unique_peak)
 	list_dict_gene_parameter_values = [dict_gene_unique_peak]
-	print "dict_gene_unique_peak = %s" % dict_gene_unique_peak
+	#print "dict_gene_unique_peak = %s" % dict_gene_unique_peak
 
 	## ----------------------------------------------------------------------------------------------------------------
 	## -- GET AMBIGUOUSLY MAPPED READS' CONTRIBUTION PER GENE (USING PEAK COVERAGE) 
@@ -493,7 +495,7 @@ def main():
    optParser.add_option( "-t", "--readType", type="choice", dest="readtype",
       choices = ( "ambiguous_unique", "multimappers" ), 
       default = "multimappers", help = "This option specifies the read type handled in the read name-to-gene names mappings " +
-         "(choices: ambiguous_unique, multimapped; default: multimapped)" )
+         "(choices: ambiguous_unique, multimappers; default: multimappers)" )
             
    optParser.add_option( "-v", "--verbose", action="store_true", dest="verbose",
       help = "suppress progress report and warnings" )

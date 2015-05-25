@@ -316,10 +316,10 @@ def count_reads_in_features( sam_filename, gff_filename, stranded,
          
    if samoutfile is not None:
       samoutfile.close()
-   print "Gene\tUnique_reads\tNon_unique_reads\tTotal"
+   print "Gene\tUnique_reads"
    for fn in sorted( counts.keys() ):
 	
-	print "%s\t%d\t%d\t%d" % ( fn, counts[fn] , dict_nonunique[fn], counts[fn] + dict_nonunique[fn]  )
+	print "%s\t%d" % ( fn, counts[fn])
 	
 	##print "*%s\t%d" % (fn, dict_nonunique[fn])
    print "no_feature\t%d" % empty
