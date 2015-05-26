@@ -12,6 +12,7 @@ use File::Basename;
 use File::Spec;
 use Data::Dumper;
 use Log::Log4perl;
+use Config::IniFiles;
 use Const::Fast qw(const);
 Log::Log4perl->init("$Bin/../config/log4perl.gt.conf");
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
@@ -21,10 +22,12 @@ use PeakRescue::GlobalTranscript;
 use PeakRescue::GetPeak;
 
 
+
 # temporary paths for testing, can be set in config ini file
 const my $PYTHON_PATH => "";
 const my $HTSEQ_PATH => "/nfs/users/nfs_s/sb43/software/HTSeq-0.6.1p1/HTSeq/scripts";
 const my $PICARD_PATH => "/software/CGP/external-apps/picard-tools-1.80/lib";
+const my $INI_FILE => "$Bin/../config/peakrescue.ini";
 
 sub new {
 	my ($class,$options)=@_;
@@ -49,7 +52,11 @@ sub _init {
 	$options->{'s'}=$suffix;
 	$options->{'d'}=$dir_name;
 	$options->{'f'}=$file_name;
-  if ($options->{'o'} && ! (-d $options->{'o'})) {
+	tie my  %ini , 'Config::IniFiles', ( -file => $INI_FILE);
+  $self->{'cfg_path'}= \%{$ini{'PATHS'}};
+	print Dumper $self->{'cfg_path'}; 
+	exit;
+	if ($options->{'o'} && ! (-d $options->{'o'})) {
   	$log->debug("Creating dir:".$options->{'o'});
 		mkpath($options->{'o'});
   }
@@ -73,6 +80,9 @@ sub _init {
 }
 
 
+sub cfg_path {
+ shift->{'cfg_path'};
+}
 
 sub run_pipeline {
 	my($self)=@_;
