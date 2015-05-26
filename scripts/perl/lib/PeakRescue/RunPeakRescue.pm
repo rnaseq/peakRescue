@@ -60,7 +60,7 @@ sub _init {
   	$log->logcroak("Unable to create directory");
   }
 	mkpath($options->{'o'}.'/'.'tmp_runPeakRescue');
-	$options->{'tmpdirPeak'}=$options->{'o'}.'/'.'tmp_runPeakRescue';
+	$options->{'tmpdir_pipeline'}=$options->{'o'}.'/'.'tmp_runPeakRescue';
 	
 	$self->{'options'} = $options;
 	
@@ -68,7 +68,7 @@ sub _init {
 	$log->debug("Using gtf file:".$options->{'gtf'});
 	$log->debug("Using genome file:".$options->{'g'});
 	$log->debug("Results will be written to :".$options->{'o'});
-	$log->debug("Using temp dir:".$options->{'tmpdirPeak'});
+	$log->debug("Using temp dir:".$options->{'tmpdir_pipeline'});
 	return;
 }
 
@@ -81,13 +81,21 @@ sub run_pipeline {
   $self->_process_sam;
   $self->_process_gtf;
   $self->_get_peak;
-  $self->_runPeakrescue;
-  $self->_process_output;
-  
-  $log->info("PeakRescue pipeline completed successfully");
-  $log->info("Process log is written in peakrescue.log");
-  $log->info("Results are stored in folder ".$self->options->{'o'});
-  
+  my ($flag)= $self->_runPeakrescue;
+	if($flag) {
+		$self->_process_output;
+		$log->info("PeakRescue pipeline completed successfully");
+		$log->info("Process log is written in peakrescue.log");
+		$log->info("Results are stored in folder ".$self->options->{'o'});
+		$log->info("Cleaning tmp data, ignore errors occured during cleanup as it might be due to file permissions");
+		PeakRescue::Base->cleanup_dir($self->options->{'tmpdir_pipeline'});
+		PeakRescue::Base->cleanup_dir($self->options->{'tmpdir_peak'});
+		PeakRescue::Base->cleanup_dir($self->options->{'tmpdir_gtf'});
+		$log->info("Cleanup completed successfully");
+  }else {
+	
+		$log->debug("Analysis completed successfully");
+	}
   return 1;
 }
 
@@ -104,14 +112,12 @@ Inputs
 
 sub _run_htseq {
 	my($self)=@_;
-	#my $gtf = $self->options->{'gtf'};	
-	#my $bam = $self->options->{'bam'};
 	# store output ...
-	$self->options->{'htseq_sam'}=$self->options->{'tmpdirPeak'}.'/'.$self->options->{'f'}.'_htseq.sam';
-	$self->options->{'htseq_count'}=$self->options->{'tmpdirPeak'}.'/'.$self->options->{'f'}.'_htseq_count.out';
-	if (-e $self->options->{'htseq_count'} ) {return;}
+	$self->options->{'htseq_sam'}=$self->options->{'tmpdir_pipeline'}.'/'.$self->options->{'f'}.'_htseq.sam';
+	$self->options->{'htseq_count'}=$self->options->{'tmpdir_pipeline'}.'/'.$self->options->{'f'}.'_htseq_count.out';
+	if (-e $self->options->{'htseq_count'} ) { $log->debug("Outfile exists:".$self->options->{'htseq_count'}." Skipping <<< _run_htseq >>> step"); return;}
 	# requires read name sorted sam file...
-	my $cmd = "samtools sort -on ".$self->options->{'bam'}." ".$self->options->{'tmpdirPeak'}."/tmpsort_1 | samtools view - | ".
+	my $cmd = "samtools sort -on ".$self->options->{'bam'}." ".$self->options->{'tmpdir_pipeline'}."/tmpsort_1 | samtools view - | ".
 		"python ".
 		"$Bin/../../python/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts/count.py ".
 			"--mode=union ".
@@ -139,12 +145,13 @@ Inputs
 
 sub _run_htseq_disambiguate {
 	my($self)=@_;
-	$self->options->{'disambiguated_sam'} =$self->options->{'tmpdirPeak'}.'/'.$self->options->{'f'}.'_disambiguated.sam';
-	$self->options->{'disambiguated_count'}=$self->options->{'tmpdirPeak'}.'/'.$self->options->{'f'}.'_disambiguated_count.out';
-	$self->options->{'multimapped_rngn'}=$self->options->{'tmpdirPeak'}.'/'.$self->options->{'f'}.'_multimapped_readname_gene_name.out';
-	$self->options->{'amb_rngn'}=$self->options->{'tmpdirPeak'}.'/'.$self->options->{'f'}.'_ambiguous_readname_gene_name.out';
-	if (-e $self->options->{'disambiguated_count'} ) {return;}
-	my $cmd = "grep -P \"ambiguous|alignment_not_unique\" ".$self->options->{'htseq_sam'}.
+	$self->options->{'disambiguated_sam'} =$self->options->{'tmpdir_pipeline'}.'/'.$self->options->{'f'}.'_disambiguated.sam';
+	$self->options->{'disambiguated_count'}=$self->options->{'tmpdir_pipeline'}.'/'.$self->options->{'f'}.'_disambiguated_count.out';
+	$self->options->{'multimapped_rngn'}=$self->options->{'tmpdir_pipeline'}.'/'.$self->options->{'f'}.'_multimapped_readname_gene_name.out';
+	$self->options->{'amb_rngn'}=$self->options->{'tmpdir_pipeline'}.'/'.$self->options->{'f'}.'_ambiguous_readname_gene_name.out';
+	if (-e $self->options->{'disambiguated_count'} ) { $log->debug("Outfile exists:".$self->options->{'disambiguated_count'}." Skipping <<< _run_htseq_disambiguate >>> step"); return;}
+	
+  my $cmd = "grep -P \"ambiguous|alignment_not_unique\" ".$self->options->{'htseq_sam'}.
 		" | python ".
 		"$Bin/../../python/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts//count_peakRescue.py ".
 			"--mode=union ".
@@ -172,14 +179,16 @@ Inputs
 
 sub _process_sam {
 	my ($self)=@_;
-  my $tmp_combined_bam=$self->options->{'tmpdirPeak'}.'/'.$self->options->{'f'}.'_combined_sorted.bam';
-	$self->options->{'kayrotypic'}=$self->options->{'tmpdirPeak'}.'/'.$self->options->{'f'}.'_kayrotypic.bam';
-	
-  # add disambiguated reads containing additional XF:Z tags to original sam with updated 
+  my $tmp_combined_bam=$self->options->{'tmpdir_pipeline'}.'/'.$self->options->{'f'}.'_combined_sorted.bam';
+	$self->options->{'kayrotypic'}=$self->options->{'tmpdir_pipeline'}.'/'.$self->options->{'f'}.'_kayrotypic.bam';
+		
+	if (-e $self->options->{'kayrotypic'} ) { $log->debug("Outfile exists:".$self->options->{'kayrotypic'}." Skipping <<< _process_sam >>> step"); return;}
+  
+	# add disambiguated reads containing additional XF:Z tags to original sam with updated 
  	my $cmd = "samtools view -H ".
  	   $self->options->{'bam'}.
  	  " | cat -  ".$self->options->{'disambiguated_sam'}. " ".$self->options->{'htseq_sam'}." | samtools view -bS -| ".
-		"samtools sort -o - ".$self->options->{'tmpdirPeak'}."/tmpsort_2 >$tmp_combined_bam";  # took 19 min to create 1.6GB file
+		"samtools sort -o - ".$self->options->{'tmpdir_pipeline'}."/tmpsort_2 >$tmp_combined_bam";  # took 19 min to create 1.6GB file
    
     if (! -e $tmp_combined_bam ) {
     	PeakRescue::Base->_run_cmd($cmd);
@@ -189,7 +198,7 @@ sub _process_sam {
     
     #$cmd="samtools index $tmp_combined_bam";
    	#PeakRescue::Base->_run_cmd($cmd);
-   	
+ 
  # creates bam to Karyotipic sorted bam
 		$cmd = "java -Xmx2G -jar $PICARD_PATH/ReorderSam.jar ".
 						"I= $tmp_combined_bam ".
@@ -197,9 +206,11 @@ sub _process_sam {
 						" REFERENCE= ".$self->options->{'g'}.
 						" ALLOW_CONTIG_LENGTH_DISCORDANCE=true".
 						" ALLOW_INCOMPLETE_DICT_CONCORDANCE=true";
-										
-		PeakRescue::Base->_run_cmd($cmd);
-		Bio::DB::Bam->index_build($self->options->{'kayrotypic'});
+		
+		if ( ! -e $self->options->{'kayrotypic'}) {								
+			PeakRescue::Base->_run_cmd($cmd);
+			Bio::DB::Bam->index_build($self->options->{'kayrotypic'});
+		}
 		#$cmd="samtools index ".$self->options->{'kayrotypic'};
 		#PeakRescue::Base->_run_cmd($cmd);
 		
@@ -214,15 +225,8 @@ Inputs
 
 sub _process_gtf {
 	my ($self)=@_;
-	
 	$self->options->{'u'}=1;
 	my $gt=PeakRescue::GlobalTranscript->new($self->options);
-	$self->options->{'unique_regions'}=$gt->{'unique_regions'};
-	$self->options->{'global_transcript'}=$gt->{'global_transcript'};
-	$self->options->{'geneboundaries'}=$gt->{'geneboundaries'};
-	$self->options->{'global_transcript_gene_length'}=$gt->{'global_transcript_gene_length'};
-	$self->options->{'unique_segment_gene_length'}=$gt->{'unique_segment_gene_length'};
-	$self->options->{'non_overlapping_geneboundaries'}=$gt->{'non_overlapping_geneboundaries'};
 	undef $gt;
 }
 
@@ -243,7 +247,7 @@ sub _get_peak {
   $getPeak_options->{'o'}=$self->options->{'o'};
   $getPeak_options->{'alg'}=$self->options->{'alg'};
  	my $peak=PeakRescue::GetPeak->new($getPeak_options);
-  $self->options->{'peak_file'}=$peak->{'peak_file'};
+  $self->options->{'peak_file'}=$peak->options->{'sample_peak'};
   undef $peak;
 }
 
@@ -256,8 +260,9 @@ Inputs
 
 sub _runPeakrescue {
 	my ($self)=@_;
-	
-	#my $combinedReadNameGeneName = $self->options->{'tmpdirPeak'}.'/tmpCombinedRNGN.tab';
+  $self->options->{'final_output'}= $self->options->{'o'}.'/peakRescueFinalCount.out';	
+	if (-e $self->options->{'final_output'} ) { $log->debug("Outfile exists:".$self->options->{'final_output'}." Skipping <<< _runPeakrescue >>> step"); return 0;}
+  #my $combinedReadNameGeneName = $self->options->{'tmpdir_pipeline'}.'/tmpCombinedRNGN.tab';
 	#my $cmd_cat = "cat ".$self->options->{'amb_rngn'}." ".$self->options->{'multimapped_rngn'}." > $combinedReadNameGeneName";
 	#PeakRescue::Base->_run_cmd($cmd_cat);
 	
@@ -270,11 +275,17 @@ sub _runPeakrescue {
 	 
 }
 
+=head2 _runReadToGeneAssignment
+runs python script _runReadToGeneAssignment
+Inputs
+=over 2
+=back
+=cut
 
-sub _runReadToGeneAssignment {
+sub  _runReadToGeneAssignment {
 	my($self,$ReadNameGeneNameFile,$tag) = @_;
-	
 	$self->options->{$tag}=$self->options->{'o'}.'/results_peakrescue_readtype_'.$tag.'_all_genes.out';
+
 	if( -e $self->options->{$tag}) { return;}
 	my $cmd= "python $Bin/../../python/readToGeneAssignment.py -d ".
 	$self->options->{'o'}.
@@ -285,10 +296,6 @@ sub _runReadToGeneAssignment {
 	PeakRescue::Base->_run_cmd($cmd);	
 }
 
-
-
-
-
 =head2 _process_output
 process output files to create final output file with FPKM 
 Inputs
@@ -298,32 +305,30 @@ Inputs
 
 sub _process_output {
 	my ($self)=@_;
-	my $final_count_with_fpkm=$self->options->{'o'}.'/peakRescueFinalCount.out';
-	
 	# merge files in pairs using ensid as common key 
 	# instead of using paste merge files by ensid key
 	
 	my $cmd = "$Bin/mergeFiles.pl -f1 ".$self->options->{'htseq_count'}.
 	" -f2 ".$self->options->{'disambiguated_count'}.
-	" -c1 1 -c2 1 -o ".$self->options->{'tmpdirPeak'}.'/tmp_htseq_count_n_disambiguated_count.out';  
+	" -c1 1 -c2 1 -o ".$self->options->{'tmpdir_pipeline'}.'/tmp_htseq_count_n_disambiguated_count.out';  
 	
 	PeakRescue::Base->_run_cmd($cmd);
 	
 	$cmd = "$Bin/mergeFiles.pl -f1 ".$self->options->{'ambiguous_unique'}.
 	" -f2 ".$self->options->{'multimappers'}.
-	" -c1 1 -c2 1 -o ".$self->options->{'tmpdirPeak'}.'/tmp_ambiguous_unique_n_multimappers.out';
+	" -c1 1 -c2 1 -o ".$self->options->{'tmpdir_pipeline'}.'/tmp_ambiguous_unique_n_multimappers.out';
 	
 	PeakRescue::Base->_run_cmd($cmd);
 	
-	$cmd = "$Bin/mergeFiles.pl -f1 ".$self->options->{'tmpdirPeak'}.'/tmp_htseq_count_n_disambiguated_count.out'.
-	" -f2 ".$self->options->{'tmpdirPeak'}.'/tmp_ambiguous_unique_n_multimappers.out'.
-	" -c1 1 -c2 1 -o ".$self->options->{'tmpdirPeak'}.'/tmp_count_n_contributions.out';
+	$cmd = "$Bin/mergeFiles.pl -f1 ".$self->options->{'tmpdir_pipeline'}.'/tmp_htseq_count_n_disambiguated_count.out'.
+	" -f2 ".$self->options->{'tmpdir_pipeline'}.'/tmp_ambiguous_unique_n_multimappers.out'.
+	" -c1 1 -c2 1 -o ".$self->options->{'tmpdir_pipeline'}.'/tmp_count_n_contributions.out';
 	
 	PeakRescue::Base->_run_cmd($cmd);
 	# add length
-	$cmd = "$Bin/mergeFiles.pl -f1 ".$self->options->{'tmpdirPeak'}.'/tmp_count_n_contributions.out'.
+	$cmd = "$Bin/mergeFiles.pl -f1 ".$self->options->{'tmpdir_pipeline'}.'/tmp_count_n_contributions.out'.
 	" -f2 ".$self->options->{'global_transcript_gene_length'}.
-	" -c1 1 -c2 1 -o ".$self->options->{'tmpdirPeak'}.'/tmp_count_n_contributions_n_length.out';
+	" -c1 1 -c2 1 -o ".$self->options->{'tmpdir_pipeline'}.'/tmp_count_n_contributions_n_length.out';
 	
 	PeakRescue::Base->_run_cmd($cmd);
 	
@@ -332,7 +337,7 @@ sub _process_output {
   
   my $total_read_count;
   my $all_data;
-  open (my $fh_data, '<', $self->options->{'tmpdirPeak'}.'/tmp_count_n_contributions_n_length.out');
+  open (my $fh_data, '<', $self->options->{'tmpdir_pipeline'}.'/tmp_count_n_contributions_n_length.out');
   while (<$fh_data>) {
     chomp;
     my($gene, $uc, $uc_d, $mm_tr, $amb_tr, $amb_p, $mm_p, $length)=(split "\t", $_)[0,1,3,4,5,7,9,11];
@@ -343,7 +348,7 @@ sub _process_output {
     $all_data->{$gene}=$line;
   }
   
-  open(my $fh_final,'>', $final_count_with_fpkm);
+  open(my $fh_final,'>', $self->options->{'final_output'});
 	#fpkm loop 
 	print $fh_final "Gene\t".
 	"uniqueCount\t".
@@ -361,9 +366,8 @@ sub _process_output {
     print $fh_final "$gene\t".join("\t",@{$all_data->{$gene}})."\t".sprintf("%.3f",$fpkm)."\n";
   }
   
-  #PeakRescue::Base->cleanup_dir($self->options->{'tmpdirPeak'});
-  
-  
+	close($fh_final,$fh_data);
+
 }
 
 
