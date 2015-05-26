@@ -41,9 +41,15 @@ sub new {
 	$log->trace('new');
 	my $self={};
 	bless $self, $class;
+  $self->{'cfg_path'}=PeakRescue::Base->get_paths;	
 	$self->_init($options);
 	$self->_do_max_peak_calculation();
 	return $self;
+}
+
+
+sub cfg_path {
+shift->{'cfg_path'};
 }
 
 =head2 _init

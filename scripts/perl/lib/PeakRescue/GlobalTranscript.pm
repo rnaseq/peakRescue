@@ -40,11 +40,18 @@ sub new {
 	$log->trace('new');
 	my $self={};
 	bless $self, $class;
+  $self->{'cfg_path'}=PeakRescue::Base->get_paths;	
 	$self->_init($options);
 	$self->_create_sorted_gtf_tabix_object();
 	$self->_check_tabix_overlap();
 	return $self;
 }
+
+sub cfg_path {
+shift->{'cfg_path'};
+}
+
+
 
 =head2 _init
 populate object with  necessary file names
@@ -87,10 +94,11 @@ Inputs
 =cut
 
 sub _create_sorted_gtf_tabix_object {
-my ($self)=@_;
-my $gtf_file=$self->options->{'gtf'};
-my $gtf_file_no_ext=$self->options->{'f'};
+	my ($self)=@_;
+	my $gtf_file=$self->options->{'gtf'};
+	my $gtf_file_no_ext=$self->options->{'f'};
 	$log->debug("Using GTF file: ".$gtf_file);
+	my $cmd = "zless $gtf_file | sort -k1,1 -k4,4n | bgzip  >$gtf_file_no_ext\_sorted.gz && tabix -p gff $gtf_file_no_ext\_sorted.gz"; 
 	#check for bgzip and index file...
 	if (-e "$gtf_file_no_ext\_sorted.gz" && -e "$gtf_file_no_ext\_sorted.gz.tbi" ) 
 	{
@@ -99,10 +107,7 @@ my $gtf_file_no_ext=$self->options->{'f'};
 	#Create tabix indexed gtf...
 	else{
 		$log->debug("Creting sorted gtf and tabix index file");
-		my ($out,$stderr,$exit) = capture{system("zless $gtf_file | sort -k1,1 -k4,4n | bgzip  >$gtf_file_no_ext\_sorted.gz && tabix -p gff $gtf_file_no_ext\_sorted.gz")};
-		if($exit) {
-			$log->logcroak('Unable to create sorted gtf file');
-		}
+	  PeakRescue::Base->_run_cmd($cmd);
 	}
 	#create Tabix object...
 	$log->debug("Tabix indexed gtf file exits, Creating Tabix object");

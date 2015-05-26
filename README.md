@@ -19,7 +19,7 @@ Some of the code in PeakRescue package has dependencies on following utility per
 
 Please install following tools before running this script and make sure that the path is set either in config/peakrescue.ini file or PATH environment variable 
 
-###Note
+####Note
 Please read the Licensesing agreement for respective tools before downloading them for commercial use.
 
 GATK - https://github.com/broadgsa/gatk-protected [ required only if you select algorithm option - gatk for coverage calculation ] 
@@ -28,7 +28,7 @@ https://github.com/broadgsa/gatk-protected/archive/2.8.tar.gz
 
 Picard - https://github.com/broadinstitute/picard [ required only if you select algorithm option - gatk for coverage calculation ] 
 
-https://github.com/broadinstitute/picard/archive/1.109.tar.gz
+https://github.com/broadinstitute/picard/releases/download/1.131/picard-tools-1.131.zip
 
 Bio::DB::Sam - http://search.cpan.org/~lds/Bio-SamTools/lib/Bio/DB/Sam.pm
 

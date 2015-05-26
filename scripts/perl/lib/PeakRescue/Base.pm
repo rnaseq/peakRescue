@@ -12,10 +12,12 @@ use List::Util qw(max min);
 use Capture::Tiny qw(:all);
 use Data::Dumper;
 use Log::Log4perl;
+use Const::Fast qw(const);
 
 Log::Log4perl->init("$Bin/../config/log4perl.gt.conf");
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
+const my $INI_FILE => "$Bin/../config/peakrescue.ini";
 
 # recursively cleanups folder and underlying substructure
 sub cleanup_dir {
@@ -27,6 +29,16 @@ sub cleanup_dir {
     return;
 }
 
+
+sub get_paths {
+	my($self)=@_;
+	tie my  %ini , 'Config::IniFiles', ( -file => $INI_FILE);
+  \%{$ini{'PATHS'}};
+}
+
+sub cfg_path {
+ shift->{'cfg_path'};
+}
 
 
 =head2 _create_fh
@@ -89,3 +101,17 @@ sub _close_fh {
 		close($fh);
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+1;
