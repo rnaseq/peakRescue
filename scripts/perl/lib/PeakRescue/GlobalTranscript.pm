@@ -72,7 +72,7 @@ sub _init {
 	$options->{'f'}=$options->{'o'}.'/'.$file_name;	
 	# create tmp dir
 	mkpath($options->{'o'}.'/'.'tmp_gt');
-	$options->{'tmpdir'}=$options->{'o'}.'/'.'tmp_gt';
+	$options->{'tmpdir_gtf'}=$options->{'o'}.'/'.'tmp_gt';
 	$self->{'options'} = $options;
 	
 	return;
@@ -133,12 +133,12 @@ sub _check_tabix_overlap {
 	my $unique_segment_gene_length_bed=$self->options->{'f'}.'_unique_segment_gene_length.tab';
 	my $non_overlapping_genes=$self->options->{'f'}.'_non_overlapping_geneboundaries.bed';
 
-	$self->{'unique_regions'}=$unique_regions_bed;
-	$self->{'global_transcript'}=$global_transcript_bed;
-	$self->{'geneboundaries'}=$geneboundaries_bed;
-	$self->{'global_transcript_gene_length'}=$global_transcript_gene_length_bed;
-	$self->{'unique_segment_gene_length'}=$unique_segment_gene_length_bed;
-	$self->{'non_overlapping_geneboundaries'}=$non_overlapping_genes;
+	$self->options->{'unique_regions'}=$unique_regions_bed;
+	$self->options->{'global_transcript'}=$global_transcript_bed;
+	$self->options->{'geneboundaries'}=$geneboundaries_bed;
+	$self->options->{'global_transcript_gene_length'}=$global_transcript_gene_length_bed;
+	$self->options->{'unique_segment_gene_length'}=$unique_segment_gene_length_bed;
+	$self->options->{'non_overlapping_geneboundaries'}=$non_overlapping_genes;
 	
 	if ( -e $unique_regions_bed) {return;}
 	# create file handlers to use...
@@ -200,7 +200,7 @@ sub _check_tabix_overlap {
 	PeakRescue::Base::_close_fh($fh_array);
 	$log->debug(">>>>>>>GTF preprosessing completed successfully for:".$self->options->{'gtf'});
 	#cleanup tmp folder
-	PeakRescue::Base->cleanup_dir($self->options->{'tmpdir'});
+	#PeakRescue::Base->cleanup_dir($self->options->{'tmpdir_gtf'});
 }
 
 =head2 _add_header
@@ -243,7 +243,7 @@ sub _process_gtf_lines_per_gene {
 	my ($self,$gtf_record,$chr,$fh_unique_regions,$fh_global_transcript,$fh_geneboundaries,$fh_global_transcript_gene_length,$fh_unique_segment_gene_length,$fh_non_overlapping_genes)=@_;
 	my $count=0;
 	my $total=keys %$gtf_record;
-	my $tmp_gene_file=$self->options->{'tmpdir'}.'/tmp_gene_bed.txt';
+	my $tmp_gene_file=$self->options->{'tmpdir_gtf'}.'/tmp_gene_bed.txt';
 	foreach my $gene (sort keys %$gtf_record) {
 		$count++;
 		if($count % 100 == 0) {
@@ -328,8 +328,8 @@ Inputs
 sub _get_unique_regions {
 	my ($self,$chr,$start,$stop,$gene,$total_len,$output)=@_;
 	my $overlaped_gene_flag=0;
-	my $tmp_sorted_bed=$self->options->{'tmpdir'}.'/tmp_gene_sortedBed.txt';
-	my $tmp_overlap_file=$self->options->{'tmpdir'}.'/tmp_genes_overlap.txt';
+	my $tmp_sorted_bed=$self->options->{'tmpdir_gtf'}.'/tmp_gene_sortedBed.txt';
+	my $tmp_overlap_file=$self->options->{'tmpdir_gtf'}.'/tmp_genes_overlap.txt';
 	my($fh_overlap)=PeakRescue::Base->_create_fh([$tmp_overlap_file],1);
 	my $fh_overlap_str=@$fh_overlap[0];
 	

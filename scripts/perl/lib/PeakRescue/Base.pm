@@ -28,6 +28,7 @@ sub cleanup_dir {
 }
 
 
+
 =head2 _create_fh
 Create file handlers 
 Inputs
@@ -66,10 +67,10 @@ sub _run_cmd {
 	my($self,$cmd)=@_;
 	my ($out,$stderr,$exit)=capture{system($cmd)};
 	if($exit) {
-			$log->logcroak("Failed to run <<<<<<< \n $cmd  <<<<<< \n with status <<<<<< \n OUT:$out  :ERR: $stderr EXIT:$exit \n <<<<<<< ");
+			$log->logcroak("Failed to run <<<<<<< \n $cmd  <<<<<< \n with status <<<<<< \n OUT:\n $out  :ERR:\n $stderr EXIT:\n $exit \n <<<<<<< \n");
 	}
 	else {
-		$log->debug("\ncommand <<<<<< \n $cmd  \n <<<<<<<<< run successfully");
+		$log->debug("\ncommand <<<<<< \n $cmd \nrun successfully <<<<<<<<< ");
 	}
 	return $out;
 }
