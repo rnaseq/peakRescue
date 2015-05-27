@@ -33,17 +33,21 @@ const my $SUPP_ALIGNMENT => 0x800;
 const my $DUP_READ => 0x400;
 const my $VENDER_FAIL => 0x200;
 
-const my $GATK_PATH => "~/software/gatk2.8/dist";
-const my $SAMTOOLS_PATH => "~/software/samtools-1.2";
 
 sub new {
 	my ($class,$options)=@_;
 	$log->trace('new');
 	my $self={};
 	bless $self, $class;
+  $self->{'cfg_path'}=PeakRescue::Base->get_paths;	
 	$self->_init($options);
 	$self->_do_max_peak_calculation();
 	return $self;
+}
+
+
+sub cfg_path {
+shift->{'cfg_path'};
 }
 
 =head2 _init
@@ -173,19 +177,13 @@ sub _get_tabix_object {
 	my ($self,$bed_file)=@_;
 	my $tabix_obj;
 	my ($file_name,$dir_name,$suffix) = fileparse($bed_file,qr/\.[^.]*/);
-	if (! -e $bed_file) {
-		$log->logcroak("Unable to find file : $bed_file ");
-	}
-	my $tmp_bed = $self->options->{'tmpdir_peak'}."/$file_name\_tabix.bed";
-	my ($out,$stderr,$exit) = capture{system("bedtools sort -i $bed_file | bgzip >$tmp_bed.gz && tabix -p bed $tmp_bed.gz ")};	
-		if ($exit) {
-			$log->logcroak("Unable to create tabix bed $stderr");
-		}
-		else {
-			$tabix_obj = new Tabix(-data => "$tmp_bed.gz");
-			$log->debug("Tabix object created successfully for $bed_file");
-			return $tabix_obj;
-		}
+  my $tmp_bed = $self->options->{'tmpdir_peak'}."/$file_name\_tabix.bed";
+	my $cmd = $self->cfg_path->{'BEDTOOLS'}."/bedtools sort -i $bed_file |".$self->cfg_path->{'TABIX'}."/bgzip >$tmp_bed.gz";
+  PeakRescue::Base->_run_cmd($cmd);
+	$cmd=$self->cfg_path->{'TABIX'}."/tabix -p bed $tmp_bed.gz";	
+  PeakRescue::Base->_run_cmd($cmd);
+	$tabix_obj = new Tabix(-data => "$tmp_bed.gz");
+	$log->debug("Tabix object created successfully for $bed_file");
 	return $tabix_obj;
 }
 
@@ -257,7 +255,7 @@ my ($self,$bam_object,$chr,$start,$end,$gene,$tabix_gt)=@_;
 	#-------------mpileup------------------Option3
 	elsif ($self->options->{'alg'} eq 'mpileup') {	
   	#need samtools 1.1 or above which takes care of overlapping read pairs... 
-		my $cmd= "$SAMTOOLS_PATH/samtools mpileup $tmp_gene_file -d $MAX_PILEUP_DEPTH -A -f ".$self->options->{'g'}. " -r $chr:$start-$end --no-BAQ ";
+		my $cmd= $self->cfg_path->{'SAMTOOLS_1'}."/samtools mpileup $tmp_gene_file -d $MAX_PILEUP_DEPTH -A -f ".$self->options->{'g'}. " -r $chr:$start-$end --no-BAQ ";
 		my($out)=PeakRescue::Base->_run_cmd($cmd);
 		my ($max)=$self->_parse_pileup($out);
 		return $max;
@@ -281,18 +279,12 @@ Inputs
 sub _run_clipOver {
 	my($self,$gene_bam)=@_;
 	my $tmp_gene_clipped=$self->options->{'tmpdir_peak'}.'/tmp_gene_clipped';
-	my $cmd="samtools view -h $gene_bam | bam clipOverlap --readName --in - --out $tmp_gene_clipped.bam";
-	my ($out,$stderr,$exit)=capture{system($cmd)};
-	chomp $stderr;
-	if ($stderr=~m/Completed ClipOverlap Successfully/) {
-		# create coordinate sorted bam ...
-		Bio::DB::Bam->sort_core(0,$tmp_gene_clipped.'.bam',$tmp_gene_clipped.'_coord');
-		Bio::DB::Bam->index_build($tmp_gene_clipped.'_coord.bam');
-		return $tmp_gene_clipped.'_coord.bam';
-	}
-	else {
-		$log->logcroak("ClipOverlap failed to run  OUT:$out  :ERR: $stderr EXIT:$exit");
-	}
+	my $cmd=$self->cfg_path->{'SAMTOOLS'}."/samtools view -h $gene_bam | ".$self->cfg_path->{'BAMUTIL'}."/bam clipOverlap --readName --in - --out $tmp_gene_clipped.bam";
+  PeakRescue::Base->_run_cmd($cmd);	
+	# create coordinate sorted bam ...
+	Bio::DB::Bam->sort_core(0,$tmp_gene_clipped.'.bam',$tmp_gene_clipped.'_coord');
+	Bio::DB::Bam->index_build($tmp_gene_clipped.'_coord.bam');
+	return $tmp_gene_clipped.'_coord.bam';
 }
 
 =head2  _run_gatk
@@ -307,7 +299,7 @@ sub _run_gatk {
 	my($self,$gene_bam,$chr,$start,$end,$tabix_gt)=@_;
 	#my($gt_int_file)=$self->_get_intervals($tabix_gt,$chr,$start,$end);
 	my $tmp_cov=$self->options->{'tmpdir_peak'}.'/tmp.coverage';
-	my $cmd = "java -Xmx2G -jar $GATK_PATH/GenomeAnalysisTK.jar ".
+	my $cmd = "java -Xmx2G -jar ".$self->cfg_path->{'GATK'}."/GenomeAnalysisTK.jar ".
 	"-T DepthOfCoverage ".
 	" -R ".$self->options->{'g'}.
 	" -I $gene_bam ".

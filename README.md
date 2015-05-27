@@ -15,11 +15,9 @@ This tool takes BAM files produced using any splice aware aligner e.g, TopHat, S
 ##Dependencies
 Some of the code in PeakRescue package has dependencies on following utility perl modules.
 
+Please install following tools before running this script and make sure that the path is set in PeakRescue/scripts/perl/config/peakrescue.ini file 
 
-
-Please install following tools before running this script and make sure that the path is set either in config/peakrescue.ini file or PATH environment variable 
-
-###Note
+####Note
 Please read the Licensesing agreement for respective tools before downloading them for commercial use.
 
 GATK - https://github.com/broadgsa/gatk-protected [ required only if you select algorithm option - gatk for coverage calculation ] 
@@ -28,7 +26,7 @@ https://github.com/broadgsa/gatk-protected/archive/2.8.tar.gz
 
 Picard - https://github.com/broadinstitute/picard [ required only if you select algorithm option - gatk for coverage calculation ] 
 
-https://github.com/broadinstitute/picard/archive/1.109.tar.gz
+https://github.com/broadinstitute/picard/releases/download/1.131/picard-tools-1.131.zip
 
 Bio::DB::Sam - http://search.cpan.org/~lds/Bio-SamTools/lib/Bio/DB/Sam.pm
 
@@ -39,11 +37,10 @@ BamUtil - http://genome.sph.umich.edu/wiki/BamUtils [ required only if you selec
 http://genome.sph.umich.edu/w/images/7/70/BamUtilLibStatGen.1.0.13.tgz
 
 Samtools - http://samtools.sourceforge.net
-
 https://github.com/samtools/samtools/archive/1.2.tar.gz
 
-Tabix - https://github.com/samtools/tabix
-
+Tabix - http://samtools.sourceforge.net/tabix.shtml
+http://sourceforge.net/projects/samtools/files/tabix/tabix-0.2.6.tar.bz2
 
 Python2.7+
 

@@ -13,7 +13,6 @@ use File::Spec;
 use Data::Dumper;
 use Log::Log4perl;
 use Config::IniFiles;
-use Const::Fast qw(const);
 Log::Log4perl->init("$Bin/../config/log4perl.gt.conf");
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
@@ -22,18 +21,12 @@ use PeakRescue::GlobalTranscript;
 use PeakRescue::GetPeak;
 
 
-
-# temporary paths for testing, can be set in config ini file
-const my $PYTHON_PATH => "";
-const my $HTSEQ_PATH => "/nfs/users/nfs_s/sb43/software/HTSeq-0.6.1p1/HTSeq/scripts";
-const my $PICARD_PATH => "/software/CGP/external-apps/picard-tools-1.80/lib";
-const my $INI_FILE => "$Bin/../config/peakrescue.ini";
-
 sub new {
 	my ($class,$options)=@_;
 	$log->trace('new');
 	my $self={};
 	bless $self, $class;
+	$self->{'cfg_path'}=PeakRescue::Base->get_paths;
 	$self->_init($options);
 	return $self;
 }
@@ -52,10 +45,6 @@ sub _init {
 	$options->{'s'}=$suffix;
 	$options->{'d'}=$dir_name;
 	$options->{'f'}=$file_name;
-	tie my  %ini , 'Config::IniFiles', ( -file => $INI_FILE);
-  $self->{'cfg_path'}= \%{$ini{'PATHS'}};
-	print Dumper $self->{'cfg_path'}; 
-	exit;
 	if ($options->{'o'} && ! (-d $options->{'o'})) {
   	$log->debug("Creating dir:".$options->{'o'});
 		mkpath($options->{'o'});
@@ -127,9 +116,11 @@ sub _run_htseq {
 	$self->options->{'htseq_count'}=$self->options->{'tmpdir_pipeline'}.'/'.$self->options->{'f'}.'_htseq_count.out';
 	if (-e $self->options->{'htseq_count'} ) { $log->debug("Outfile exists:".$self->options->{'htseq_count'}." Skipping <<< _run_htseq >>> step"); return;}
 	# requires read name sorted sam file...
-	my $cmd = "samtools sort -on ".$self->options->{'bam'}." ".$self->options->{'tmpdir_pipeline'}."/tmpsort_1 | samtools view - | ".
-		"python ".
-		"$Bin/../../python/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts/count.py ".
+	my $cmd = $self->cfg_path->{'SAMTOOLS'}."/samtools sort -on ".
+		$self->options->{'bam'}." ".$self->options->{'tmpdir_pipeline'}."/tmpsort_1 | ".
+		$self->cfg_path->{'SAMTOOLS'}."/samtools view - | ".
+		$self->cfg_path->{'PYTHON'}.
+		" $Bin/../../python/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts/count.py ".
 			"--mode=union ".
 			"--stranded=no ".
 			"--samout=".$self->options->{'htseq_sam'}.
@@ -162,8 +153,8 @@ sub _run_htseq_disambiguate {
 	if (-e $self->options->{'disambiguated_count'} ) { $log->debug("Outfile exists:".$self->options->{'disambiguated_count'}." Skipping <<< _run_htseq_disambiguate >>> step"); return;}
 	
   my $cmd = "grep -P \"ambiguous|alignment_not_unique\" ".$self->options->{'htseq_sam'}.
-		" | python ".
-		"$Bin/../../python/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts//count_peakRescue.py ".
+		" | ".$self->cfg_path->{'PYTHON'}.
+		" $Bin/../../python/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts//count_peakRescue.py ".
 			"--mode=union ".
 			"--stranded=no ".
 			"--samout=".$self->options->{'disambiguated_sam'}.
@@ -195,10 +186,10 @@ sub _process_sam {
 	if (-e $self->options->{'kayrotypic'} ) { $log->debug("Outfile exists:".$self->options->{'kayrotypic'}." Skipping <<< _process_sam >>> step"); return;}
   
 	# add disambiguated reads containing additional XF:Z tags to original sam with updated 
- 	my $cmd = "samtools view -H ".
+ 	my $cmd = $self->cfg_path->{'SAMTOOLS'}."/samtools view -H ".
  	   $self->options->{'bam'}.
- 	  " | cat -  ".$self->options->{'disambiguated_sam'}. " ".$self->options->{'htseq_sam'}." | samtools view -bS -| ".
-		"samtools sort -o - ".$self->options->{'tmpdir_pipeline'}."/tmpsort_2 >$tmp_combined_bam";  # took 19 min to create 1.6GB file
+ 	  " | cat -  ".$self->options->{'disambiguated_sam'}. " ".$self->options->{'htseq_sam'}." | ".$self->cfg_path->{'SAMTOOLS'}."/samtools view -bS -| ".
+		$self->cfg_path->{'SAMTOOLS'}."/samtools sort -o - ".$self->options->{'tmpdir_pipeline'}."/tmpsort_2 >$tmp_combined_bam";  # took 19 min to create 1.6GB file
    
     if (! -e $tmp_combined_bam ) {
     	PeakRescue::Base->_run_cmd($cmd);
@@ -210,7 +201,7 @@ sub _process_sam {
    	#PeakRescue::Base->_run_cmd($cmd);
  
  # creates bam to Karyotipic sorted bam
-		$cmd = "java -Xmx2G -jar $PICARD_PATH/ReorderSam.jar ".
+		$cmd = "java -Xmx2G -jar ".$self->cfg_path->{'PICARD'}."/picard.jar ReorderSam ".
 						"I= $tmp_combined_bam ".
 						"O= ".$self->options->{'kayrotypic'}.
 						" REFERENCE= ".$self->options->{'g'}.
@@ -360,7 +351,8 @@ sub _process_output {
   
   open(my $fh_final,'>', $self->options->{'final_output'});
 	#fpkm loop 
-	print $fh_final "Gene\t".
+	print $fh_final 
+	"Gene\t".
 	"uniqueCount\t".
 	"uniqueDisambiguatedCount\t".
 	"ambiguousUniqueToRescue\t".
