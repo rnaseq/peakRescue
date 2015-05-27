@@ -33,17 +33,21 @@ const my $SUPP_ALIGNMENT => 0x800;
 const my $DUP_READ => 0x400;
 const my $VENDER_FAIL => 0x200;
 
-const my $GATK_PATH => "~/software/gatk2.8/dist";
-const my $SAMTOOLS_PATH => "~/software/samtools-1.2";
 
 sub new {
 	my ($class,$options)=@_;
 	$log->trace('new');
 	my $self={};
 	bless $self, $class;
+  $self->{'cfg_path'}=PeakRescue::Base->get_paths;	
 	$self->_init($options);
 	$self->_do_max_peak_calculation();
 	return $self;
+}
+
+
+sub cfg_path {
+shift->{'cfg_path'};
 }
 
 =head2 _init
@@ -71,13 +75,13 @@ sub _init {
   	$log->logcroak("Unable to create directory");
   }
 	mkpath($options->{'o'}.'/'.'tmp_peak');
-	$options->{'tmpdir'}=$options->{'o'}.'/'.'tmp_peak';
+	$options->{'tmpdir_peak'}=$options->{'o'}.'/'.'tmp_peak';
 	$self->{'options'} = $options;
 	
 	$log->debug("<<<< Using bam file:".$options->{'bam'});
 	$log->debug("<<<< Using bed file:".$options->{'bed'});
 	$log->debug("<<<< Using coverage calculation method: ".$options->{'alg'});
-	$log->debug("<<<< Using temp dir:".$options->{'tmpdir'});
+	$log->debug("<<<< Using temp dir:".$options->{'tmpdir_peak'});
 	return;
 }
 
@@ -115,48 +119,49 @@ sub _do_max_peak_calculation {
 	my($tabix)=$self->_get_tabix_object($self->options->{'bed'});
 	my($tabix_gt)=$self->_get_tabix_object($self->options->{'gt'});
 	my $peak_out=$self->options->{'o'}.'/'.$self->options->{'f'}.'_peak.txt';
-	$self->{'peak_file'}=$peak_out;
+	$self->options->{'sample_peak'}=$peak_out;
+	if (-e $self->options->{'sample_peak'} ) { $log->debug("Outfile exists:".$self->options->{'sample_peak'}."Skipping _do_max_peak_calculation step"); return;}
 	open(my $peak_fh, '>>', $peak_out);
 	# check progress required as this is long process if beaks in between can be restarted from where it left using progress file
 	my $progress_file=$self->options->{'o'}.'/'.'progress.txt';
 	if( -e $progress_file) { $log->info("Progress file exists, analysis will be resumed, to restart analysis please remove progress file"); }
+	# open file in res write and append mode
 	open(my $progress_fh, '>>', $progress_file);
 	open(my $read_progress, '<', $progress_file);
 	my @chr_analysed=<$read_progress>; 
 	close($read_progress);
-	
 	# end of progress check	
 	$log->logcroak("Unable to create tabix object") if (!$tabix);
 	# get chromosome names
 	my @chrnames=$tabix->getnames;
 	###
 	foreach my $chr (@chrnames) {
-	next if (grep (/^$chr$/, @chr_analysed));
-	$log->debug(">>>>>>>Calculating peak for chromosome: $chr ");
-	my ($peak_data, $counter);
-	my $res = $tabix->query($chr);
-		while(my $record = $tabix->read($res)){		
-			chomp;
-			my ($chr,$start,$end,$gene)=(split "\t", $record) [0,1,2,3];
-			$counter++;
-			if($counter % 50 == 0) {
-				$log->debug("Calculated peak for chromosome: $chr ==>".$counter.' genes');
-				# can be used if hash is running out of memory
-				$self->_print_peak($peak_data,$peak_fh);
-				$peak_data=();
-			}
-			my($max_peak)=$self->_get_gene_bam_object($bam_object,$chr,$start,$end,$gene,$tabix_gt);
+		next if (grep (/^$chr$/, @chr_analysed));
+		$log->debug(">>>>>>>Calculating peak for chromosome: $chr ");
+		my ($peak_data, $counter);
+		my $res = $tabix->query($chr);
+			while(my $record = $tabix->read($res)){		
+				chomp;
+				my ($chr,$start,$end,$gene)=(split "\t", $record) [0,1,2,3];
+				$counter++;
+				if($counter % 100 == 0) {
+					$log->debug("Calculated peak for chromosome: $chr ==>".$counter.' genes');
+					# can be used if hash is running out of memory
+					#$self->_print_peak($peak_data,$peak_fh);
+					#$peak_data=();
+				}
+				my($max_peak)=$self->_get_gene_bam_object($bam_object,$chr,$start,$end,$gene,$tabix_gt);
 			$peak_data->{$gene}=$max_peak;
-		}
-	# print peak data for each chromosome
-	$self->_print_peak($peak_data,$peak_fh);
-	$log->debug(">>>>>>>>> Completed peak calculation for chromosome: $chr ===>".$counter.' gene >>>>>>>>>');
-	print $progress_fh $chr."\n";
-}
+			}
+		#print peak data for each chromosome
+		$self->_print_peak($peak_data,$peak_fh);
+		$log->debug(">>>>>>>>> Completed peak calculation for chromosome: $chr ===>".$counter.' gene >>>>>>>>>');
+		print $progress_fh $chr."\n";
+	}
 	close($peak_fh);
 	close($progress_fh);
-	
-	PeakRescue::Base->cleanup_dir($self->options->{'tmpdir'});
+ # cleanup will happen in run script	
+ #PeakRescue::Base->cleanup_dir($self->options->{'tmpdir_peak'});
 	
 }
 
@@ -172,19 +177,13 @@ sub _get_tabix_object {
 	my ($self,$bed_file)=@_;
 	my $tabix_obj;
 	my ($file_name,$dir_name,$suffix) = fileparse($bed_file,qr/\.[^.]*/);
-	if (! -e $bed_file) {
-		$log->logcroak("Unable to find file : $bed_file ");
-	}
-	my $tmp_bed = $self->options->{'tmpdir'}."/$file_name\_tabix.bed";
-	my ($out,$stderr,$exit) = capture{system("bedtools sort -i $bed_file | bgzip >$tmp_bed.gz && tabix -p bed $tmp_bed.gz ")};	
-		if ($exit) {
-			$log->logcroak("Unable to create tabix bed $stderr");
-		}
-		else {
-			$tabix_obj = new Tabix(-data => "$tmp_bed.gz");
-			$log->debug("Tabix object created successfully for $bed_file");
-			return $tabix_obj;
-		}
+  my $tmp_bed = $self->options->{'tmpdir_peak'}."/$file_name\_tabix.bed";
+	my $cmd = $self->cfg_path->{'BEDTOOLS'}."/bedtools sort -i $bed_file |".$self->cfg_path->{'TABIX'}."/bgzip >$tmp_bed.gz";
+  PeakRescue::Base->_run_cmd($cmd);
+	$cmd=$self->cfg_path->{'TABIX'}."/tabix -p bed $tmp_bed.gz";	
+  PeakRescue::Base->_run_cmd($cmd);
+	$tabix_obj = new Tabix(-data => "$tmp_bed.gz");
+	$log->debug("Tabix object created successfully for $bed_file");
 	return $tabix_obj;
 }
 
@@ -200,7 +199,7 @@ Inputs
 
 sub _get_gene_bam_object {
 my ($self,$bam_object,$chr,$start,$end,$gene,$tabix_gt)=@_;
-	my $tmp_gene_file=$self->options->{'tmpdir'}.'/tmp_gene.bam';
+	my $tmp_gene_file=$self->options->{'tmpdir_peak'}.'/tmp_gene.bam';
 	# create bio db bam object
 	my $bam = Bio::DB::Bam->open($tmp_gene_file,'w');
 	
@@ -245,7 +244,7 @@ my ($self,$bam_object,$chr,$start,$end,$gene,$tabix_gt)=@_;
 	#------------ClipOver------------------Option2
 	elsif($self->options->{'alg'} eq 'clipover') {
 	  # create tmp file
-		my $tmp_gene_sorted=$self->options->{'tmpdir'}.'/tmp_gene_name_sorted';
+		my $tmp_gene_sorted=$self->options->{'tmpdir_peak'}.'/tmp_gene_name_sorted';
 		# read name sorted bam file
 		Bio::DB::Bam->sort_core(1,$tmp_gene_file,$tmp_gene_sorted);
 		my($clipped_bam)=$self->_run_clipOver("$tmp_gene_sorted.bam");
@@ -256,7 +255,7 @@ my ($self,$bam_object,$chr,$start,$end,$gene,$tabix_gt)=@_;
 	#-------------mpileup------------------Option3
 	elsif ($self->options->{'alg'} eq 'mpileup') {	
   	#need samtools 1.1 or above which takes care of overlapping read pairs... 
-		my $cmd= "$SAMTOOLS_PATH/samtools mpileup $tmp_gene_file -d $MAX_PILEUP_DEPTH -A -f ".$self->options->{'g'}. " -r $chr:$start-$end --no-BAQ ";
+		my $cmd= $self->cfg_path->{'SAMTOOLS_1'}."/samtools mpileup $tmp_gene_file -d $MAX_PILEUP_DEPTH -A -f ".$self->options->{'g'}. " -r $chr:$start-$end --no-BAQ ";
 		my($out)=PeakRescue::Base->_run_cmd($cmd);
 		my ($max)=$self->_parse_pileup($out);
 		return $max;
@@ -279,19 +278,13 @@ Inputs
 
 sub _run_clipOver {
 	my($self,$gene_bam)=@_;
-	my $tmp_gene_clipped=$self->options->{'tmpdir'}.'/tmp_gene_clipped';
-	my $cmd="samtools view -h $gene_bam | bam clipOverlap --readName --in - --out $tmp_gene_clipped.bam";
-	my ($out,$stderr,$exit)=capture{system($cmd)};
-	chomp $stderr;
-	if ($stderr=~m/Completed ClipOverlap Successfully/) {
-		# create coordinate sorted bam ...
-		Bio::DB::Bam->sort_core(0,$tmp_gene_clipped.'.bam',$tmp_gene_clipped.'_coord');
-		Bio::DB::Bam->index_build($tmp_gene_clipped.'_coord.bam');
-		return $tmp_gene_clipped.'_coord.bam';
-	}
-	else {
-		$log->logcroak("ClipOverlap failed to run  OUT:$out  :ERR: $stderr EXIT:$exit");
-	}
+	my $tmp_gene_clipped=$self->options->{'tmpdir_peak'}.'/tmp_gene_clipped';
+	my $cmd=$self->cfg_path->{'SAMTOOLS'}."/samtools view -h $gene_bam | ".$self->cfg_path->{'BAMUTIL'}."/bam clipOverlap --readName --in - --out $tmp_gene_clipped.bam";
+  PeakRescue::Base->_run_cmd($cmd);	
+	# create coordinate sorted bam ...
+	Bio::DB::Bam->sort_core(0,$tmp_gene_clipped.'.bam',$tmp_gene_clipped.'_coord');
+	Bio::DB::Bam->index_build($tmp_gene_clipped.'_coord.bam');
+	return $tmp_gene_clipped.'_coord.bam';
 }
 
 =head2  _run_gatk
@@ -305,8 +298,8 @@ Inputs
 sub _run_gatk {
 	my($self,$gene_bam,$chr,$start,$end,$tabix_gt)=@_;
 	#my($gt_int_file)=$self->_get_intervals($tabix_gt,$chr,$start,$end);
-	my $tmp_cov=$self->options->{'tmpdir'}.'/tmp.coverage';
-	my $cmd = "java -Xmx2G -jar $GATK_PATH/GenomeAnalysisTK.jar ".
+	my $tmp_cov=$self->options->{'tmpdir_peak'}.'/tmp.coverage';
+	my $cmd = "java -Xmx2G -jar ".$self->cfg_path->{'GATK'}."/GenomeAnalysisTK.jar ".
 	"-T DepthOfCoverage ".
 	" -R ".$self->options->{'g'}.
 	" -I $gene_bam ".
@@ -339,7 +332,7 @@ Inputs
 
 sub _get_intervals{
 	my($self,$tabix,$chr,$start,$end)=@_;
-	my $tmp_gt_file=$self->options->{'tmpdir'}.'/tmp.list';
+	my $tmp_gt_file=$self->options->{'tmpdir_peak'}.'/tmp.list';
 	open(my $gt_fh,'>',$tmp_gt_file);
 	my $res = $tabix->query($chr,$start,$end);
 	while(my $record = $tabix->read($res)){		

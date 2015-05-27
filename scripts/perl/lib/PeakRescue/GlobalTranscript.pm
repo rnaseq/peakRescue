@@ -40,11 +40,18 @@ sub new {
 	$log->trace('new');
 	my $self={};
 	bless $self, $class;
+  $self->{'cfg_path'}=PeakRescue::Base->get_paths;	
 	$self->_init($options);
 	$self->_create_sorted_gtf_tabix_object();
 	$self->_check_tabix_overlap();
 	return $self;
 }
+
+sub cfg_path {
+shift->{'cfg_path'};
+}
+
+
 
 =head2 _init
 populate object with  necessary file names
@@ -72,7 +79,7 @@ sub _init {
 	$options->{'f'}=$options->{'o'}.'/'.$file_name;	
 	# create tmp dir
 	mkpath($options->{'o'}.'/'.'tmp_gt');
-	$options->{'tmpdir'}=$options->{'o'}.'/'.'tmp_gt';
+	$options->{'tmpdir_gtf'}=$options->{'o'}.'/'.'tmp_gt';
 	$self->{'options'} = $options;
 	
 	return;
@@ -87,10 +94,11 @@ Inputs
 =cut
 
 sub _create_sorted_gtf_tabix_object {
-my ($self)=@_;
-my $gtf_file=$self->options->{'gtf'};
-my $gtf_file_no_ext=$self->options->{'f'};
+	my ($self)=@_;
+	my $gtf_file=$self->options->{'gtf'};
+	my $gtf_file_no_ext=$self->options->{'f'};
 	$log->debug("Using GTF file: ".$gtf_file);
+	my $cmd = "zless $gtf_file | sort -k1,1 -k4,4n |".$self->cfg_path->{'TABIX'}."/bgzip  >$gtf_file_no_ext\_sorted.gz";
 	#check for bgzip and index file...
 	if (-e "$gtf_file_no_ext\_sorted.gz" && -e "$gtf_file_no_ext\_sorted.gz.tbi" ) 
 	{
@@ -99,10 +107,9 @@ my $gtf_file_no_ext=$self->options->{'f'};
 	#Create tabix indexed gtf...
 	else{
 		$log->debug("Creting sorted gtf and tabix index file");
-		my ($out,$stderr,$exit) = capture{system("zless $gtf_file | sort -k1,1 -k4,4n | bgzip  >$gtf_file_no_ext\_sorted.gz && tabix -p gff $gtf_file_no_ext\_sorted.gz")};
-		if($exit) {
-			$log->logcroak('Unable to create sorted gtf file');
-		}
+	  PeakRescue::Base->_run_cmd($cmd);
+	  $cmd=$self->cfg_path->{'TABIX'}."/tabix -p gff $gtf_file_no_ext\_sorted.gz"; 
+	  PeakRescue::Base->_run_cmd($cmd);
 	}
 	#create Tabix object...
 	$log->debug("Tabix indexed gtf file exits, Creating Tabix object");
@@ -133,12 +140,12 @@ sub _check_tabix_overlap {
 	my $unique_segment_gene_length_bed=$self->options->{'f'}.'_unique_segment_gene_length.tab';
 	my $non_overlapping_genes=$self->options->{'f'}.'_non_overlapping_geneboundaries.bed';
 
-	$self->{'unique_regions'}=$unique_regions_bed;
-	$self->{'global_transcript'}=$global_transcript_bed;
-	$self->{'geneboundaries'}=$geneboundaries_bed;
-	$self->{'global_transcript_gene_length'}=$global_transcript_gene_length_bed;
-	$self->{'unique_segment_gene_length'}=$unique_segment_gene_length_bed;
-	$self->{'non_overlapping_geneboundaries'}=$non_overlapping_genes;
+	$self->options->{'unique_regions'}=$unique_regions_bed;
+	$self->options->{'global_transcript'}=$global_transcript_bed;
+	$self->options->{'geneboundaries'}=$geneboundaries_bed;
+	$self->options->{'global_transcript_gene_length'}=$global_transcript_gene_length_bed;
+	$self->options->{'unique_segment_gene_length'}=$unique_segment_gene_length_bed;
+	$self->options->{'non_overlapping_geneboundaries'}=$non_overlapping_genes;
 	
 	if ( -e $unique_regions_bed) {return;}
 	# create file handlers to use...
@@ -200,7 +207,7 @@ sub _check_tabix_overlap {
 	PeakRescue::Base::_close_fh($fh_array);
 	$log->debug(">>>>>>>GTF preprosessing completed successfully for:".$self->options->{'gtf'});
 	#cleanup tmp folder
-	PeakRescue::Base->cleanup_dir($self->options->{'tmpdir'});
+	#PeakRescue::Base->cleanup_dir($self->options->{'tmpdir_gtf'});
 }
 
 =head2 _add_header
@@ -243,7 +250,7 @@ sub _process_gtf_lines_per_gene {
 	my ($self,$gtf_record,$chr,$fh_unique_regions,$fh_global_transcript,$fh_geneboundaries,$fh_global_transcript_gene_length,$fh_unique_segment_gene_length,$fh_non_overlapping_genes)=@_;
 	my $count=0;
 	my $total=keys %$gtf_record;
-	my $tmp_gene_file=$self->options->{'tmpdir'}.'/tmp_gene_bed.txt';
+	my $tmp_gene_file=$self->options->{'tmpdir_gtf'}.'/tmp_gene_bed.txt';
 	foreach my $gene (sort keys %$gtf_record) {
 		$count++;
 		if($count % 100 == 0) {
@@ -283,10 +290,12 @@ sub _merge_intervals {
 	my ($self,$gene,$tmp_file)=@_;
 	my ($g_start, $g_end, $chr, $start, $stop);
 	# merge intervals to get global transcript intervals...
-	my ($out,$stderr,$exit) = capture {system("mergeBed -i $tmp_file")};
+	my $cmd=$self->cfg_path->{'BEDTOOLS'}."/mergeBed -i $tmp_file";
+	my ($out,$stderr,$exit) = capture {system($cmd)};
 	if($exit){ 
 		$log->debug("Unable to perform mergeBed opertaion for $gene $stderr Trying to sort intervals");
-		($out,$stderr,$exit) = capture {system("sortBed -i $tmp_file | mergeBed -i - ")};
+		$cmd=$self->cfg_path->{'BEDTOOLS'}."/sortBed -i $tmp_file | ".$self->cfg_path->{'BEDTOOLS'}."/mergeBed -i - ";
+	  ($out) = PeakRescue::Base->_run_cmd($cmd);
 	}
 	if($exit){ 
 		$log->logcroak("Unable to perform mergeBed opertaion for $gene $stderr  after sorting intervals");
@@ -328,8 +337,8 @@ Inputs
 sub _get_unique_regions {
 	my ($self,$chr,$start,$stop,$gene,$total_len,$output)=@_;
 	my $overlaped_gene_flag=0;
-	my $tmp_sorted_bed=$self->options->{'tmpdir'}.'/tmp_gene_sortedBed.txt';
-	my $tmp_overlap_file=$self->options->{'tmpdir'}.'/tmp_genes_overlap.txt';
+	my $tmp_sorted_bed=$self->options->{'tmpdir_gtf'}.'/tmp_gene_sortedBed.txt';
+	my $tmp_overlap_file=$self->options->{'tmpdir_gtf'}.'/tmp_genes_overlap.txt';
 	my($fh_overlap)=PeakRescue::Base->_create_fh([$tmp_overlap_file],1);
 	my $fh_overlap_str=@$fh_overlap[0];
 	
@@ -352,13 +361,13 @@ sub _get_unique_regions {
 			my($fh_sorted)=PeakRescue::Base->_create_fh([$tmp_sorted_bed],1);
 			my $fh_soretd_str=@$fh_sorted[0];
 			print $fh_soretd_str $output;
-			my($out,$stderr,$exit) = capture {system("subtractBed -a $tmp_sorted_bed -b $tmp_overlap_file | mergeBed -i - ")};
+			my $cmd=$self->cfg_path->{'BEDTOOLS'}."/subtractBed -a $tmp_sorted_bed -b $tmp_overlap_file | ".$self->cfg_path->{'BEDTOOLS'}."/mergeBed -i - ";
+			my($out,$stderr,$exit) = capture {system($cmd)};
 			if($exit){ 
 				$log->debug("Unable to perform subtractBed opertaion for $gene $stderr Trying to sort Overlapped interval file file");
-				($out,$stderr,$exit) = capture {system("sortBed $tmp_overlap_file | subtractBed -a $tmp_sorted_bed -b - | mergeBed -i - ")};
-			}
-			if($exit){ 
-				$log->logcroak("Unable to perform subtractBed opertaion for $gene $stderr after sorting intervals");
+	      $cmd=$self->cfg_path->{'BEDTOOLS'}."/sortBed $tmp_overlap_file | ".$self->cfg_path->{'BEDTOOLS'}.
+				"/subtractBed -a $tmp_sorted_bed -b - | ".$self->cfg_path->{'BEDTOOLS'}."/mergeBed -i - ";
+				($out) = PeakRescue::Base->_run_cmd($cmd);
 			}
 			close($fh_soretd_str);
 			my $u_total_len=0;

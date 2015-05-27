@@ -2,7 +2,7 @@ package PeakRescue::Base;
 use PeakRescue;
 our $VERSION = PeakRescue->VERSION;
 
-
+use strict;
 use Tabix;
 use File::Path qw(mkpath remove_tree);
 use File::Basename;
@@ -12,10 +12,10 @@ use List::Util qw(max min);
 use Capture::Tiny qw(:all);
 use Data::Dumper;
 use Log::Log4perl;
-
+use Const::Fast qw(const);
 Log::Log4perl->init("$Bin/../config/log4perl.gt.conf");
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
-
+const my $INI_FILE => "$Bin/../config/peakrescue.ini";
 
 # recursively cleanups folder and underlying substructure
 sub cleanup_dir {
@@ -25,6 +25,18 @@ sub cleanup_dir {
     $log->logcroak("Unable to remove cleanup dir:$dir") if( -d $dir);
     $log->debug("Dir: $dir cleaned successfully");
     return;
+}
+
+
+sub get_paths {
+	my($self)=@_;
+	tie my  %ini , 'Config::IniFiles', ( -file => $INI_FILE);
+  \%{$ini{'PATHS'}}
+}
+
+
+sub cfg_path {
+ shift->{'cfg_path'};
 }
 
 
@@ -66,10 +78,10 @@ sub _run_cmd {
 	my($self,$cmd)=@_;
 	my ($out,$stderr,$exit)=capture{system($cmd)};
 	if($exit) {
-			$log->logcroak("Failed to run <<<<<<< \n $cmd  <<<<<< \n with status <<<<<< \n OUT:$out  :ERR: $stderr EXIT:$exit \n <<<<<<< ");
+			$log->logcroak("Failed to run <<<<<<< \n $cmd  <<<<<< \n with status <<<<<< \n OUT:\n $out  :ERR:\n $stderr EXIT:\n $exit \n <<<<<<< \n");
 	}
 	else {
-		$log->debug("\ncommand <<<<<< \n $cmd  \n <<<<<<<<< run successfully");
+		$log->debug("\ncommand <<<<<< \n $cmd \nrun successfully <<<<<<<<< ");
 	}
 	return $out;
 }
@@ -88,3 +100,17 @@ sub _close_fh {
 		close($fh);
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+1;
