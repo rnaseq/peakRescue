@@ -201,7 +201,7 @@ sub _process_sam {
    	#PeakRescue::Base->_run_cmd($cmd);
  
  # creates bam to Karyotipic sorted bam
-		$cmd = "java -Xmx2G -jar ".$self->cfg_path->{'PICARD'}."/picard.jar ReorderSam.jar ".
+		$cmd = "java -Xmx2G -jar ".$self->cfg_path->{'PICARD'}."/picard.jar ReorderSam ".
 						"I= $tmp_combined_bam ".
 						"O= ".$self->options->{'kayrotypic'}.
 						" REFERENCE= ".$self->options->{'g'}.

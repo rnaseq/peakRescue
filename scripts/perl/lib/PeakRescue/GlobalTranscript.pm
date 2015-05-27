@@ -98,7 +98,7 @@ sub _create_sorted_gtf_tabix_object {
 	my $gtf_file=$self->options->{'gtf'};
 	my $gtf_file_no_ext=$self->options->{'f'};
 	$log->debug("Using GTF file: ".$gtf_file);
-	my $cmd = "zless $gtf_file | sort -k1,1 -k4,4n | bgzip  >$gtf_file_no_ext\_sorted.gz && tabix -p gff $gtf_file_no_ext\_sorted.gz"; 
+	my $cmd = "zless $gtf_file | sort -k1,1 -k4,4n |".$self->cfg_path->{'TABIX'}."/bgzip  >$gtf_file_no_ext\_sorted.gz";
 	#check for bgzip and index file...
 	if (-e "$gtf_file_no_ext\_sorted.gz" && -e "$gtf_file_no_ext\_sorted.gz.tbi" ) 
 	{
@@ -107,6 +107,8 @@ sub _create_sorted_gtf_tabix_object {
 	#Create tabix indexed gtf...
 	else{
 		$log->debug("Creting sorted gtf and tabix index file");
+	  PeakRescue::Base->_run_cmd($cmd);
+	  $cmd=$self->cfg_path->{'TABIX'}."/tabix -p gff $gtf_file_no_ext\_sorted.gz"; 
 	  PeakRescue::Base->_run_cmd($cmd);
 	}
 	#create Tabix object...
@@ -288,10 +290,12 @@ sub _merge_intervals {
 	my ($self,$gene,$tmp_file)=@_;
 	my ($g_start, $g_end, $chr, $start, $stop);
 	# merge intervals to get global transcript intervals...
-	my ($out,$stderr,$exit) = capture {system("mergeBed -i $tmp_file")};
+	my $cmd=$self->cfg_path->{'BEDTOOLS'}."/mergeBed -i $tmp_file";
+	my ($out,$stderr,$exit) = capture {system($cmd)};
 	if($exit){ 
 		$log->debug("Unable to perform mergeBed opertaion for $gene $stderr Trying to sort intervals");
-		($out,$stderr,$exit) = capture {system("sortBed -i $tmp_file | mergeBed -i - ")};
+		$cmd=$self->cfg_path->{'BEDTOOLS'}."/sortBed -i $tmp_file | ".$self->cfg_path->{'BEDTOOLS'}."/mergeBed -i - ";
+	  ($out) = PeakRescue::Base->_run_cmd($cmd);
 	}
 	if($exit){ 
 		$log->logcroak("Unable to perform mergeBed opertaion for $gene $stderr  after sorting intervals");
@@ -357,13 +361,13 @@ sub _get_unique_regions {
 			my($fh_sorted)=PeakRescue::Base->_create_fh([$tmp_sorted_bed],1);
 			my $fh_soretd_str=@$fh_sorted[0];
 			print $fh_soretd_str $output;
-			my($out,$stderr,$exit) = capture {system("subtractBed -a $tmp_sorted_bed -b $tmp_overlap_file | mergeBed -i - ")};
+			my $cmd=$self->cfg_path->{'BEDTOOLS'}."/subtractBed -a $tmp_sorted_bed -b $tmp_overlap_file | ".$self->cfg_path->{'BEDTOOLS'}."/mergeBed -i - ";
+			my($out,$stderr,$exit) = capture {system($cmd)};
 			if($exit){ 
 				$log->debug("Unable to perform subtractBed opertaion for $gene $stderr Trying to sort Overlapped interval file file");
-				($out,$stderr,$exit) = capture {system("sortBed $tmp_overlap_file | subtractBed -a $tmp_sorted_bed -b - | mergeBed -i - ")};
-			}
-			if($exit){ 
-				$log->logcroak("Unable to perform subtractBed opertaion for $gene $stderr after sorting intervals");
+	      $cmd=$self->cfg_path->{'BEDTOOLS'}."/sortBed $tmp_overlap_file | ".$self->cfg_path->{'BEDTOOLS'}.
+				"/subtractBed -a $tmp_sorted_bed -b - | ".$self->cfg_path->{'BEDTOOLS'}."/mergeBed -i - ";
+				($out) = PeakRescue::Base->_run_cmd($cmd);
 			}
 			close($fh_soretd_str);
 			my $u_total_len=0;
