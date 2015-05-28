@@ -13,9 +13,9 @@ This tool takes BAM files produced using any splice aware aligner e.g, TopHat, S
 ---
 
 ##Dependencies
-Some of the code in PeakRescue package has dependencies on following utility perl modules.
+Some of the code in PeakRescue package has dependencies on utility perl modules.
 
-Please install following tools before running this script and make sure that the path is set in PeakRescue/scripts/perl/config/peakrescue.ini file 
+Please install following tools before running setup.sh script and make sure that the path is set in config/peakrescue.ini file for these tools
 
 ####Note
 Please read the Licensesing agreement for respective tools before downloading them for commercial use.
@@ -28,7 +28,7 @@ Picard - https://github.com/broadinstitute/picard [ required only if you select 
 
 https://github.com/broadinstitute/picard/releases/download/1.131/picard-tools-1.131.zip
 
-Bio::DB::Sam - http://search.cpan.org/~lds/Bio-SamTools/lib/Bio/DB/Sam.pm
+Bio::DB::Sam - http://search.cpan.org/~lds/Bio-SamTools/lib/Bio/DB/Sam.pm [ installed after running setup.sh script included in PeakRescue ]
 
 http://search.cpan.org/CPAN/authors/id/L/LD/LDS/Bio-SamTools-1.41.tar.gz
 
@@ -39,12 +39,12 @@ http://genome.sph.umich.edu/w/images/7/70/BamUtilLibStatGen.1.0.13.tgz
 Samtools - http://samtools.sourceforge.net
 https://github.com/samtools/samtools/archive/1.2.tar.gz
 
-Tabix - http://samtools.sourceforge.net/tabix.shtml
+Tabix - http://samtools.sourceforge.net/tabix.shtml [ installed after running setup.sh script included in PeakRescue ]
 http://sourceforge.net/projects/samtools/files/tabix/tabix-0.2.6.tar.bz2
 
-Python2.7+
+Python2.5+
 
-Perl 5.16+
+Perl 5.14+
 
 BedTools - http://bedtools.readthedocs.org/en/latest/
 
@@ -52,6 +52,11 @@ https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
 
 ---
 
+# Installing PeakRescue
+
+./setup.sh <path_to_install_dir>
+
+
 # Running PeakRescue
 
-perl scripts/perl/bin/runPeakRescue.pl -bam datasets/chr21.bam -gtf datasets/chr21.gtf.gz -g datasets/chr21.fa -alg clipover -o results_dir
+bin/runPeakRescue.pl -bam datasets/chr21.bam -gtf datasets/chr21.gtf.gz -g datasets/chr21.fa -alg biodbsam -o output
