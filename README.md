@@ -54,7 +54,7 @@ https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
 
 # Installing PeakRescue
 
-./setup.sh <path_to_install_dir>
+./setup.sh  /path_to_install_dir
 
 
 # Running PeakRescue
