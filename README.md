@@ -44,7 +44,7 @@ http://sourceforge.net/projects/samtools/files/tabix/tabix-0.2.6.tar.bz2
 
 Python2.5+
 
-Perl 5.14+
+Perl 5.14.2+
 
 BedTools - http://bedtools.readthedocs.org/en/latest/
 
