@@ -117,10 +117,10 @@ sub _run_htseq {
 	$self->options->{'htseq_count'}=$self->options->{'tmpdir_pipeline'}.'/'.$self->options->{'f'}.'_htseq_count.out';
 	if (-e $self->options->{'htseq_count'} ) { $log->debug("Outfile exists:".$self->options->{'htseq_count'}." Skipping <<< _run_htseq >>> step"); return;}
 	# requires read name sorted sam file...
-	my $cmd = $self->cfg_path->{'SAMTOOLS'}."/samtools sort -on ".
+	my $cmd = "$Bin/samtools sort -on ".
 		$self->options->{'bam'}." ".$self->options->{'tmpdir_pipeline'}."/tmpsort_1 | ".
-		$self->cfg_path->{'SAMTOOLS'}."/samtools view - | ".
-		$self->cfg_path->{'PYTHON'}.
+		"$Bin/samtools view - | ".
+		"python ".
 		" $Bin/HTSeq/scripts/count.py ".
 			"--mode=union ".
 			"--stranded=no ".
@@ -154,7 +154,7 @@ sub _run_htseq_disambiguate {
 	if (-e $self->options->{'disambiguated_count'} ) { $log->debug("Outfile exists:".$self->options->{'disambiguated_count'}." Skipping <<< _run_htseq_disambiguate >>> step"); return;}
 	
   my $cmd = "grep -P \"ambiguous|alignment_not_unique\" ".$self->options->{'htseq_sam'}.
-		" | ".$self->cfg_path->{'PYTHON'}.
+		" | python ".
 		" $Bin/HTSeq/scripts/count_peakRescue.py ".
 			"--mode=union ".
 			"--stranded=no ".
@@ -187,10 +187,10 @@ sub _process_sam {
 	if (-e $self->options->{'kayrotypic'} ) { $log->debug("Outfile exists:".$self->options->{'kayrotypic'}." Skipping <<< _process_sam >>> step"); return;}
   
 	# add disambiguated reads containing additional XF:Z tags to original sam with updated 
- 	my $cmd = $self->cfg_path->{'SAMTOOLS'}."/samtools view -H ".
+ 	my $cmd = "$Bin/samtools view -H ".
  	   $self->options->{'bam'}.
- 	  " | cat -  ".$self->options->{'disambiguated_sam'}. " ".$self->options->{'htseq_sam'}." | ".$self->cfg_path->{'SAMTOOLS'}."/samtools view -bS -| ".
-		$self->cfg_path->{'SAMTOOLS'}."/samtools sort -o - ".$self->options->{'tmpdir_pipeline'}."/tmpsort_2 >$tmp_combined_bam";  # took 19 min to create 1.6GB file
+ 	  " | cat -  ".$self->options->{'disambiguated_sam'}. " ".$self->options->{'htseq_sam'}." | "."$Bin/samtools view -bS -| ".
+		"$Bin/samtools sort -o - ".$self->options->{'tmpdir_pipeline'}."/tmpsort_2 >$tmp_combined_bam";  # took 19 min to create 1.6GB file
    
     if (! -e $tmp_combined_bam ) {
     	PeakRescue::Base->_run_cmd($cmd);
