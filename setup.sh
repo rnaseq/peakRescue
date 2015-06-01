@@ -1,4 +1,4 @@
-#!/bin/bash
+
 
 ##########LICENCE##########
 # Copyright (c) 2014 Genome Research Ltd. & University of Edinburgh
@@ -21,6 +21,8 @@
 
 SOURCE_SAMTOOLS="https://github.com/samtools/samtools/archive/0.1.20.tar.gz"
 SOURCE_TABIX="http://sourceforge.net/projects/samtools/files/tabix/tabix-0.2.6.tar.bz2/download"
+SOURCE_BAMUTIL="https://github.com/statgen/bamUtil/archive/v1.0.13.tar.gz"
+SOURCE_BEDTOOLS="https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz"
 
 done_message () {
     if [ $? -eq 0 ]; then
@@ -62,8 +64,8 @@ if [ "$#" -ne "1" ] ; then
   exit 0
 fi
 
-CPU=`cat /proc/cpuinfo | egrep "^processor" | wc -l`
-echo "Max compilation CPUs set to $CPU"
+CPU=1
+echo "compilation CPUs set to $CPU"
 
 INST_PATH=$1
 
@@ -145,6 +147,49 @@ else
 fi
 done_message "" "Failed to build $CURR_TOOL."
 
+
+CURR_TOOL="bamUtil-1.0.13"
+CURR_SOURCE=$SOURCE_BAMUTIL
+echo -n "Building $CURR_TOOL ..."
+if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then
+  echo -n " previously installed ..."
+else
+  (
+    set -ex
+    get_distro $CURR_TOOL $CURR_SOURCE
+    cd $SETUP_DIR/$CURR_TOOL
+    make cloneLib
+    make 
+    make install INSTALLDIR=$INST_PATH/bin
+    touch $SETUP_DIR/$CURR_TOOL.success
+  ) >>$INIT_DIR/setup.log 2>&1
+fi
+done_message "" "Failed to build $CURR_TOOL."
+
+export PATH="$INST_PATH/bin:$PATH"
+
+# Install bedtools 
+
+CURR_TOOL="bedtools-2.17.0"
+CURR_SOURCE=$SOURCE_BEDTOOLS
+
+echo -n "Building $CURR_TOOL ..."
+if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then
+  echo -n " previously installed ..."
+else
+  (
+    set -ex
+    get_distro $CURR_TOOL $CURR_SOURCE
+    cd $SETUP_DIR/$CURR_TOOL
+    make
+    cp -r bin/* $INST_PATH/bin/
+    touch $SETUP_DIR/$CURR_TOOL.success
+  ) >>$INIT_DIR/setup.log 2>&1
+fi
+done_message "" "Failed to build $CURR_TOOL."
+
+export PATH="$INST_PATH/bin:$PATH"
+
 # need to build samtools as has to be compiled in correct way for perl bindings
 # does not deploy binary in this form
 echo -n "Building samtools ..."
@@ -159,6 +204,7 @@ else
     perl -i -pe 's/^CFLAGS=\s*/CFLAGS=-fPIC / unless /\b-fPIC\b/' samtools/Makefile
   fi
   make -C samtools -j$CPU
+	cp $SETUP_DIR/samtools/samtools $INST_PATH/bin/
   touch $SETUP_DIR/samtools.success
   )>>$INIT_DIR/setup.log 2>&1
 fi
@@ -166,7 +212,6 @@ done_message "" "Failed to build samtools."
 
 export SAMTOOLS="$SETUP_DIR/samtools"
 
-#add bin path for install tests
 export PATH="$INST_PATH/bin:$PATH"
 
 cd $INIT_DIR

@@ -3,10 +3,7 @@
 ##########LICENCE##########
 # Copyright (c) 2014 
 #
-# Author: Cancer Genome Project sb43@sanger.ac.uk
-#
 # This file is part of PeakRescue
-#
 # PeakRescue is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License as published by the Free
 # Software Foundation; either version 3 of the License, or (at your option) any
@@ -25,8 +22,6 @@
 use ExtUtils::MakeMaker;
 use File::ShareDir::Install;
 
-#install_share module => 'PeakRescue';
-
 WriteMakefile(
   NAME          => 'PeakRescue',
   LICENSE       => 'agpl_3', # http://search.cpan.org/~dagolden/CPAN-Meta-2.142690/lib/CPAN/Meta/Spec.pm#license
@@ -37,7 +32,7 @@ WriteMakefile(
   PREREQ_PM     => {
                     'Attribute::Abstract' => '1.02',
                     'Bio::DB::Sam' => '1.39',
-                    'Bio::Root::Version' => '1.006924', # this is the only way to get Bio::Perl to behave and return the version correctly
+                    'Bio::Root::Version' => '1.006924', 
                     'Capture::Tiny' => 0.24,
                     'Config::IniFiles' => '2.83',
                     'Const::Fast' => '0.014',

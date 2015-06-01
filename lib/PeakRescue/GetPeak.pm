@@ -178,9 +178,9 @@ sub _get_tabix_object {
 	my $tabix_obj;
 	my ($file_name,$dir_name,$suffix) = fileparse($bed_file,qr/\.[^.]*/);
   my $tmp_bed = $self->options->{'tmpdir_peak'}."/$file_name\_tabix.bed";
-	my $cmd = $self->cfg_path->{'BEDTOOLS'}."/bedtools sort -i $bed_file |".$self->cfg_path->{'TABIX'}."/bgzip >$tmp_bed.gz";
+	my $cmd = "$Bin/bedtools sort -i $bed_file | $Bin/bgzip >$tmp_bed.gz";
   PeakRescue::Base->_run_cmd($cmd);
-	$cmd=$self->cfg_path->{'TABIX'}."/tabix -p bed $tmp_bed.gz";	
+	$cmd="$Bin/tabix -p bed $tmp_bed.gz";	
   PeakRescue::Base->_run_cmd($cmd);
 	$tabix_obj = new Tabix(-data => "$tmp_bed.gz");
 	$log->debug("Tabix object created successfully for $bed_file");
@@ -279,7 +279,7 @@ Inputs
 sub _run_clipOver {
 	my($self,$gene_bam)=@_;
 	my $tmp_gene_clipped=$self->options->{'tmpdir_peak'}.'/tmp_gene_clipped';
-	my $cmd=$self->cfg_path->{'SAMTOOLS'}."/samtools view -h $gene_bam | ".$self->cfg_path->{'BAMUTIL'}."/bam clipOverlap --readName --in - --out $tmp_gene_clipped.bam";
+	my $cmd="$Bin/samtools view -h $gene_bam | $Bin/bam clipOverlap --readName --in - --out $tmp_gene_clipped.bam";
   PeakRescue::Base->_run_cmd($cmd);	
 	# create coordinate sorted bam ...
 	Bio::DB::Bam->sort_core(0,$tmp_gene_clipped.'.bam',$tmp_gene_clipped.'_coord');
