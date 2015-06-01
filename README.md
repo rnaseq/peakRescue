@@ -71,7 +71,10 @@ bin/runPeakRescue.pl -bam datasets/chr21.bam -gtf datasets/chr21.gtf.gz -g datas
 #### choosing algorithm [-alg] option
 
 gatk - uses gatk DepthOfCoverage [ slow but accurate coverage for overlapping read peairs from same fragment ]
+
 clipover - uses bamutils clipOverlap option to merge overlapping reads [ fast and gives simialr results to gatk on test data set ]
+
 mpileup - uses samtools v1.1 and above [ faster than gatk - propelry calculates coverage for overlapping reads ]
+
 biodbsam - uses Bio::Db:Sam coverage method [ fastest but calculates overlapping read pairs twice] 
 
