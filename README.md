@@ -70,7 +70,7 @@ bin/runPeakRescue.pl -bam datasets/chr21.bam -gtf datasets/chr21.gtf.gz -g datas
 
 #### choosing algorithm [-alg] option
 
-gatk - uses gatk DepthOfCoverage [ slow but accurate coverage for overlapping read peairs from same fragment ]
+gatk - uses gatk DepthOfCoverage [ slow but accurate coverage for overlapping read pairs from same fragment ]
 
 clipover - uses bamutils clipOverlap option to merge overlapping reads [ fast and gives simialr results to gatk on test data set ]
 
