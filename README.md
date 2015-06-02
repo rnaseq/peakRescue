@@ -79,7 +79,7 @@ python -V # this should be the version you used to install HTSeq.
 
 ---
 
-# Installing PeakRescue (please check prerequisites above)
+# Installing PeakRescue
 
 cd peakRescue
 ./setup.sh  /path_to_install_dir
