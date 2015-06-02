@@ -21,7 +21,7 @@ Perl 5.14.2+
 
 #### Note
 
-Please read the Licensesing agreement for respective tools before downloading them for commercial use.
+Please read the Licensing agreement for respective tools before downloading them for commercial use.
 
 #### Manual installation
 
@@ -57,9 +57,29 @@ BedTools - http://bedtools.readthedocs.org/en/latest/
 
 https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
 
+#### Install HTSeq within peakRescue
+
+cd bin/HTSeq
+python setup.py install --user
+
+If you have any issue installing this package, please see instructions at: http://www-huber.embl.de/users/anders/HTSeq/doc/install.html
+
+#### Update ~/.bashrc with the python version used to install HTSeq
+
+Edit your ~/.bashrc and add the following line - replacing 'full_path_to_your_python_installation_dir' to your own python path:
+alias python='full_path_to_your_python_installation_dir/python'
+
+Save ~/.bashrc & quit.
+
+Update environment variables with the following command:
+source ~/.bashrc
+
+Check python version:
+python -V # this should be the version you used to install HTSeq.
+
 ---
 
-# Installing PeakRescue
+# Installing PeakRescue (please check prerequisites above)
 
 cd peakRescue
 ./setup.sh  /path_to_install_dir
