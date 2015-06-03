@@ -120,11 +120,7 @@ sub _run_htseq {
 		$self->options->{'bam'}." ".$self->options->{'tmpdir_pipeline'}."/tmpsort_1 | ".
 		"$Bin/samtools view - | ".
 		"python ".
-<<<<<<< HEAD
-		" $Bin/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts/count.py ".
-=======
 		" $Bin/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts/count_peakRescue_step1.py ".
->>>>>>> ec663895f84cf8094d9ddc4629868eadb667d08c
 			"--mode=union ".
 			"--stranded=no ".
 			"--samout=".$self->options->{'htseq_sam'}.
@@ -158,11 +154,7 @@ sub _run_htseq_disambiguate {
 	
   my $cmd = "grep -P \"ambiguous|alignment_not_unique\" ".$self->options->{'htseq_sam'}.
 		" | python ".
-<<<<<<< HEAD
-		" $Bin/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts/count_peakRescue.py ".
-=======
 		" $Bin/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts/count_peakRescue_step2.py ".
->>>>>>> ec663895f84cf8094d9ddc4629868eadb667d08c
 			"--mode=union ".
 			"--stranded=no ".
 			"--samout=".$self->options->{'disambiguated_sam'}.
