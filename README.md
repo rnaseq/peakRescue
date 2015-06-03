@@ -60,7 +60,7 @@ https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
 
 #### Download PeakRescue
 
-wget https://github.com/rnaseq/peakRescue/archive/3.2.4.tar.gz
+wget https://github.com/rnaseq/peakRescue/archive/3.2.5.tar.gz
 
 ##### for development only 
 git clone https://github.com/rnaseq/peakRescue.git
