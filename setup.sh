@@ -80,8 +80,8 @@ cp $INIT_DIR/config/log4perl.gt.conf $INST_PATH/config/
 cp $INIT_DIR/config/peakrescue.ini	$INST_PATH/config
 cp -rp $INIT_DIR/bin/HTSeq-0.5.3p3_peakRescue	$INST_PATH/bin/
 cp -rp $INIT_DIR/datasets/	$INST_PATH/datasets/
-cp -p $INIT_DIR/lib/PeakRescue.pm $INST_PATH/lib/perl5/
-cp -rp $INIT_DIR/lib/PeakRescue $INST_PATH/lib/perl5/
+cp -rp $INIT_DIR/README.md	$INST_PATH/README.md
+
 cd $INST_PATH
 INST_PATH=`pwd`
 cd $INIT_DIR

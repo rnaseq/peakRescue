@@ -18,6 +18,7 @@ Python 2.5+ (< 3)
 
 Perl 5.14.2+
 
+Tested on various Unix platforms [ Not tested on Mac OS X]
 
 #### Note
 
@@ -60,7 +61,7 @@ https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
 
 #### Download PeakRescue
 
-wget https://github.com/rnaseq/peakRescue/archive/3.2.5.tar.gz
+wget https://github.com/rnaseq/peakRescue/archive/3.2.6.tar.gz
 
 ##### for development only 
 git clone https://github.com/rnaseq/peakRescue.git
@@ -97,11 +98,13 @@ bin/runPeakRescue.pl -bam datasets/chr21.bam -gtf datasets/chr21.gtf.gz -g datas
 
 #### choosing algorithm [-alg] option
 
-gatk - uses gatk DepthOfCoverage [ slow but accurate coverage for overlapping read pairs from same fragment ]
-
 clipover - uses bamutils clipOverlap option to merge overlapping reads [ fast and gives simialr results to gatk on test data set ]
 
+gatk - uses gatk DepthOfCoverage [ slow but accurate coverage for overlapping read pairs from same fragment ]
+
 mpileup - uses samtools v1.1 and above [ faster than gatk - propelry calculates coverage for overlapping reads ]
+
+###### currently under development 
 
 biodbsam - uses Bio::Db:Sam coverage method [ fastest but calculates overlapping read pairs twice] 
 
