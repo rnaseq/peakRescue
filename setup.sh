@@ -78,6 +78,7 @@ mkdir -p $INST_PATH/config
 mkdir -p $INST_PATH/lib/perl5
 cp $INIT_DIR/bin/readToGeneAssignment.py $INST_PATH/bin/
 cp $INIT_DIR/bin/runPeakRescue.pl $INST_PATH/bin/
+cp $INIT_DIR/bin/mergeFiles.pl $INST_PATH/bin/
 cp $INIT_DIR/config/log4perl.gt.conf $INST_PATH/config/
 cp $INIT_DIR/config/peakrescue.ini	$INST_PATH/config
 cp -rp $INIT_DIR/bin/HTSeq	$INST_PATH/bin/
