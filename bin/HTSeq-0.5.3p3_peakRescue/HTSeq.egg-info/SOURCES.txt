@@ -4,6 +4,7 @@ README
 VERSION
 build_it
 clean
+setup.cfg
 setup.py
 HTSeq/StepVector.py
 HTSeq/_HTSeq_internal.py
@@ -15,7 +16,6 @@ HTSeq.egg-info/dependency_links.txt
 HTSeq.egg-info/top_level.txt
 HTSeq/scripts/__init__.py
 HTSeq/scripts/count.py
-HTSeq/scripts/qa.py
 doc/Makefile
 doc/add_counter.py
 doc/alignments.rst
