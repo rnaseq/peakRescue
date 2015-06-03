@@ -20,7 +20,7 @@
 ##########LICENCE##########
 
 SOURCE_SAMTOOLS="https://github.com/samtools/samtools/archive/0.1.20.tar.gz"
-SOURCE_TABIX="http://sourceforge.net/projects/samtools/files/tabix/tabix-0.2.6.tar.bz2/download"
+SOURCE_TABIX="https://github.com/sb43/tabix/archive/0.2.6.tar.gz" 
 SOURCE_BAMUTIL="https://github.com/statgen/bamUtil/archive/v1.0.13.tar.gz"
 SOURCE_BEDTOOLS="https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz"
 
@@ -123,7 +123,7 @@ mkdir -p $SETUP_DIR
 
 cd $SETUP_DIR
 
-CURR_TOOL="tabix"
+CURR_TOOL="tabix-0.2.6"
 CURR_SOURCE=$SOURCE_TABIX
 echo -n "Building $CURR_TOOL ..."
 if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then

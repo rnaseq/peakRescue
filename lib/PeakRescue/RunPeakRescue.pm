@@ -12,7 +12,6 @@ use File::Basename;
 use File::Spec;
 use Data::Dumper;
 use Log::Log4perl;
-use Config::IniFiles;
 Log::Log4perl->init("$Bin/../config/log4perl.gt.conf");
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
