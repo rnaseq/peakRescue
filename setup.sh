@@ -137,7 +137,6 @@ else
     cp tabix $INST_PATH/bin/.
     cp bgzip $INST_PATH/bin/.
     cd perl
-    patch Makefile.PL < $INIT_DIR/patches/tabixPerlLinker.diff
     perl Makefile.PL INSTALL_BASE=$INST_PATH
     make
     make test
