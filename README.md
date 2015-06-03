@@ -74,6 +74,7 @@ If you have any issue installing this package, please see instructions at: http:
 #### Update ~/.bashrc with the python version used to install HTSeq
 
 Edit your ~/.bashrc and add the following line - replacing 'full_path_to_your_python_installation_dir' to your own python path:
+
 alias python='full_path_to_your_python_installation_dir/python'
 
 Save ~/.bashrc & quit.
