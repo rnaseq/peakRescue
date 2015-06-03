@@ -20,7 +20,7 @@
 ##########LICENCE##########
 
 SOURCE_SAMTOOLS="https://github.com/samtools/samtools/archive/0.1.20.tar.gz"
-SOURCE_TABIX="http://sourceforge.net/projects/samtools/files/tabix/tabix-0.2.6.tar.bz2/download"
+SOURCE_TABIX="https://github.com/sb43/tabix/archive/0.2.6.tar.gz" 
 SOURCE_BAMUTIL="https://github.com/statgen/bamUtil/archive/v1.0.13.tar.gz"
 SOURCE_BEDTOOLS="https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz"
 
@@ -75,16 +75,16 @@ INIT_DIR=`pwd`
 # cleanup inst_path
 mkdir -p $INST_PATH/bin
 mkdir -p $INST_PATH/config
-mkdir -p $INST_PATH/lib/perl5
 cp $INIT_DIR/bin/readToGeneAssignment.py $INST_PATH/bin/
-cp $INIT_DIR/bin/runPeakRescue.pl $INST_PATH/bin/
-cp $INIT_DIR/bin/mergeFiles.pl $INST_PATH/bin/
 cp $INIT_DIR/config/log4perl.gt.conf $INST_PATH/config/
 cp $INIT_DIR/config/peakrescue.ini	$INST_PATH/config
 cp -rp $INIT_DIR/bin/HTSeq-0.5.3p3_peakRescue	$INST_PATH/bin/
+<<<<<<< HEAD
 cp -rp $INIT_DIR/datasets/	$INST_PATH/datasets/
 cp -p $INIT_DIR/lib/PeakRescue.pm $INST_PATH/lib/perl5/
 cp -rp $INIT_DIR/lib/PeakRescue $INST_PATH/lib/perl5/
+=======
+>>>>>>> ec663895f84cf8094d9ddc4629868eadb667d08c
 cd $INST_PATH
 INST_PATH=`pwd`
 cd $INIT_DIR
@@ -129,7 +129,7 @@ mkdir -p $SETUP_DIR
 
 cd $SETUP_DIR
 
-CURR_TOOL="tabix"
+CURR_TOOL="tabix-0.2.6"
 CURR_SOURCE=$SOURCE_TABIX
 echo -n "Building $CURR_TOOL ..."
 if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then
@@ -143,7 +143,6 @@ else
     cp tabix $INST_PATH/bin/.
     cp bgzip $INST_PATH/bin/.
     cd perl
-    patch Makefile.PL < $INIT_DIR/patches/tabixPerlLinker.diff
     perl Makefile.PL INSTALL_BASE=$INST_PATH
     make
     make test

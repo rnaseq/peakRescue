@@ -60,12 +60,15 @@ https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
 
 #### Download PeakRescue
 
+wget https://github.com/rnaseq/peakRescue/archive/3.2.1.tar.gz
+
+##### for development only 
 git clone https://github.com/rnaseq/peakRescue.git
 
 
 #### Install HTSeq within peakRescue
 
-cd peakRescue/bin/HTSeq
+cd bin/HTSeq-0.5.3p3_peakRescue
 
 python setup.py install --user
 
@@ -73,19 +76,14 @@ If you have any issue installing this package, please see instructions at: http:
 
 #### Update ~/.bashrc with the python version used to install HTSeq
 
-Edit your ~/.bashrc and add the following line - replacing 'full_path_to_your_python_installation_dir' to your own python path:
-
-alias python='full_path_to_your_python_installation_dir/python'
+Edit your ~/.bashrc and add the following line - replacing 'full_path_to_your_python_installation_dir' to your own python path: alias python='full_path_to_your_python_installation_dir/python'
 
 Save ~/.bashrc & quit.
 
-Update environment variables with the following command:
-source ~/.bashrc
+Update environment variables with the following command: source ~/.bashrc
 
-Check python version:
-python -V # this should be the version you used to install HTSeq.
+Check python version: python -V # this should be the version you used to install HTSeq.
 
----
 
 # Installing PeakRescue
 
