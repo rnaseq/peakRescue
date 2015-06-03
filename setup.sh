@@ -75,19 +75,10 @@ INIT_DIR=`pwd`
 # cleanup inst_path
 mkdir -p $INST_PATH/bin
 mkdir -p $INST_PATH/config
-mkdir -p $INST_PATH/lib/perl5
 cp $INIT_DIR/bin/readToGeneAssignment.py $INST_PATH/bin/
-cp $INIT_DIR/bin/runPeakRescue.pl $INST_PATH/bin/
 cp $INIT_DIR/config/log4perl.gt.conf $INST_PATH/config/
 cp $INIT_DIR/config/peakrescue.ini	$INST_PATH/config
 cp -rp $INIT_DIR/bin/HTSeq-0.5.3p3_peakRescue	$INST_PATH/bin/
-cp -rp $INIT_DIR/datasets/	$INST_PATH/datasets/
-<<<<<<< HEAD
->>>>>>> origin/master
-=======
-cp -p $INIT_DIR/lib/PeakRescue.pm $INST_PATH/lib/perl5/
-cp -rp $INIT_DIR/lib/PeakRescue $INST_PATH/lib/perl5/
->>>>>>> origin/master
 cd $INST_PATH
 INST_PATH=`pwd`
 cd $INIT_DIR
@@ -146,7 +137,6 @@ else
     cp tabix $INST_PATH/bin/.
     cp bgzip $INST_PATH/bin/.
     cd perl
-    patch Makefile.PL < $INIT_DIR/patches/tabixPerlLinker.diff
     perl Makefile.PL INSTALL_BASE=$INST_PATH
     make
     make test
