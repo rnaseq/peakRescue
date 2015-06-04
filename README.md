@@ -6,7 +6,7 @@ PeakRescue is freely available under a GNU Public License.
 PeakRescue
 ===========
 
-PeakRescue is robust fragment counting method for RNA-seq data.
+PeakRescue is a robust fragment counting method for RNA-seq data.
 
 This tool takes BAM files produced using any splice aware aligner e.g, TopHat, STAR etc., and  produces fragment count data per gene. 
 
