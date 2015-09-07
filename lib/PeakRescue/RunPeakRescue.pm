@@ -18,6 +18,7 @@ my $log = Log::Log4perl->get_logger(__PACKAGE__);
 use PeakRescue::Base;
 use PeakRescue::GlobalTranscript;
 use PeakRescue::GetPeak;
+use PeakRescue::GetPeakIterate;
 
 
 sub new {
@@ -45,15 +46,18 @@ sub _init {
 	$options->{'d'}=$dir_name;
 	$options->{'f'}=$file_name;
 	if ($options->{'o'} && ! (-d $options->{'o'})) {
-  	$log->debug("Creating dir:".$options->{'o'});
+  		$log->debug("Creating dir:".$options->{'o'});
 		mkpath($options->{'o'});
-  }
+  	}
 	elsif(!$options->{'o'}) {
-   $options->{'o'}=$dir_name;
-  }
-  elsif (!(-d $options->{'o'})) {
-  	$log->logcroak("Unable to create directory");
-  }
+   		$options->{'o'}=$dir_name;
+  	}
+  	elsif (!(-d $options->{'o'})) {
+  		$log->logcroak("Unable to create directory");
+ 	}
+	if ($options->{'u'}) {
+  		$log->debug("Option ulimit is set: run pipeline using the master script to bypass the 'too many open files' issue encountered on servers with ulimit -n set below the nb of genes in the input gtf (option set to: ".$options->{'ou'}.")");
+  	}
 	mkpath($options->{'o'}.'/'.'tmp_runPeakRescue');
 	$options->{'tmpdir_pipeline'}=$options->{'o'}.'/'.'tmp_runPeakRescue';
 	
@@ -76,10 +80,10 @@ sub run_pipeline {
 	my($self)=@_;
 	$self->_run_htseq;
 	$self->_run_htseq_disambiguate;
-  $self->_process_sam;
-  $self->_process_gtf;
-  $self->_get_peak;
-  my ($flag)= $self->_runPeakrescue;
+  	$self->_process_sam;
+  	$self->_process_gtf;
+  	$self->_get_peak;
+  	my ($flag)= $self->_runPeakrescue;
 	if($flag) {
 		$self->_process_output;
 		$log->info("PeakRescue pipeline completed successfully");
@@ -89,9 +93,11 @@ sub run_pipeline {
 		sleep(5);
 		PeakRescue::Base->cleanup_dir($self->options->{'tmpdir_pipeline'});
 		PeakRescue::Base->cleanup_dir($self->options->{'tmpdir_peak'});
+		PeakRescue::Base->cleanup_dir($self->options->{'tmpdir_peak2'});
+		PeakRescue::Base->cleanup_dir($self->options->{'tmpdir_peak3'});
 		PeakRescue::Base->cleanup_dir($self->options->{'tmpdir_gtf'});
 		$log->info("Cleanup completed successfully");
-  }else {
+  	}else {
 	
 		$log->debug("Analysis completed successfully");
 	}
@@ -245,14 +251,23 @@ sub _get_peak {
 	my ($self)=@_;
 	my $getPeak_options;
 	$getPeak_options->{'bed'}=$self->options->{'geneboundaries'};
-  $getPeak_options->{'bam'}=$self->options->{'kayrotypic'};
-  $getPeak_options->{'g'}=$self->options->{'g'};
-  $getPeak_options->{'gt'}=$self->options->{'global_transcript'};
-  $getPeak_options->{'o'}=$self->options->{'o'};
-  $getPeak_options->{'alg'}=$self->options->{'alg'};
- 	my $peak=PeakRescue::GetPeak->new($getPeak_options);
-  $self->options->{'peak_file'}=$peak->options->{'sample_peak'};
-  undef $peak;
+ 	$getPeak_options->{'bam'}=$self->options->{'kayrotypic'};
+  	$getPeak_options->{'g'}=$self->options->{'g'};
+  	$getPeak_options->{'gt'}=$self->options->{'global_transcript'};
+  	$getPeak_options->{'o'}=$self->options->{'o'};
+  	$getPeak_options->{'alg'}=$self->options->{'alg'};
+	my $peak ;
+	if ($self->options->{'u'}) {
+		$log->debug("In _getPeak within RunPeakRescue.pm: run GetPeakIterate as internal ulimit option set to 1.");
+		$peak=PeakRescue::GetPeakIterate->new($getPeak_options);
+		#$self->options->{'peak_file'}=$peak->options->{'sample_peak'};
+	} else {
+		$log->debug("In _getPeak within RunPeakRescue.pm: run GetPeak (internal ulimit option set to 0)");
+		$peak=PeakRescue::GetPeak->new($getPeak_options);
+		#$self->options->{'peak_file'}=$peak->options->{'sample_peak'};
+	}
+  	$self->options->{'peak_file'}=$peak->options->{'sample_peak'};
+  	undef $peak;
 }
 
 =head2 _runPeakrescue

@@ -1,4 +1,5 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
+
 BEGIN {
   use Cwd qw(abs_path);
   use File::Basename;
@@ -37,6 +38,7 @@ sub option_builder {
 					'g|genomeFasta=s' => \$opts{'g'},
 					'alg|algorithm=s' => \$opts{'alg'},
 					'o|outdir=s'  => \$opts{'o'},
+					'u|ulimit=s'  => \$opts{'u'},
 					'v|version'  => \$opts{'v'},
 	);
 
@@ -75,8 +77,11 @@ Required Options (bam and bed interval files must be defined):
   --outdir            (-o) outdir [ Path to output directory ]
   
 Optional :
-  --help             (-h)  This message
+  --help             (-h) This message
   --version          (-v) displays version number of this software
+  --version          (-v) displays version number of this software
+  --ulimit           (-u) Internal option not to be used explicitly by the user - please refer to the README file for guidance on how to run peakRescue in distinct mode at https://github.com/rnaseq/peakRescue/. 
+		          This option is set to 1 if peakRescue is to be run on servers with a limited number of open files allowed (see ulimit -n) i.e. < number of genes in the input GTF file [0:1 default:0]
 
   Example:
       perl runPeakRescue.pl -bam test.bam -gtf test.gtf -g test.fa -o testdir
