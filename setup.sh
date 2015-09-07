@@ -75,8 +75,8 @@ INIT_DIR=`pwd`
 # cleanup inst_path
 mkdir -p $INST_PATH/bin
 mkdir -p $INST_PATH/config
-cp $INIT_DIR/bin/run_peakrescue_master.sh $INST_PATH/
-cp $INIT_DIR/bin/run_peakrescue.sh $INST_PATH/
+cp $INIT_DIR/bin/run_peakrescue_master.sh $INST_PATH/bin/
+cp $INIT_DIR/bin/run_peakrescue.sh $INST_PATH/bin/
 cp $INIT_DIR/bin/runPeakRescue.pl $INST_PATH/bin/
 cp $INIT_DIR/bin/readToGeneAssignment.py $INST_PATH/bin/
 cp $INIT_DIR/config/log4perl.gt.conf $INST_PATH/config/
