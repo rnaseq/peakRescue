@@ -123,7 +123,7 @@ sub _do_max_peak_calculation {
 	my $cmd = "wc -l $geneBoundariesBedFile | awk -F ' ' '{print \$1}'";
 	my $totalNbGenesWithFileName = PeakRescue::Base->_run_cmd($cmd);
 	my ($totalNbGenes, $tmpVarInputFile) = split / /, $totalNbGenesWithFileName;
-	$totalNbGenes = $totalNbGenes-1; ## header line exists  ################### UPDATE 2015-09-02
+	$totalNbGenes = $totalNbGenes-1; ## header line exists
 	$log->debug(">>>>>>>>> In peak calculation: check the total nb of genes in " . $geneBoundariesBedFile . ": " . $totalNbGenes . " >>>>>>>>>");
 	# --
 	my($tabix_gt)=$self->_get_tabix_object($self->options->{'gt'});
@@ -138,7 +138,6 @@ sub _do_max_peak_calculation {
 	open(my $progress_fh, '>>', $progress_file);
 	open(my $read_progress, '<', $progress_file);
 	# -- Extend the progress file to also report the gene names already processed for each chromosome: chr [1-* relationship] gene pairs.
-	# my @chr_analysed=<$read_progress>; 
 	my @chr_analysed = [] ;
 	my %hash_chr_genes_processed;
 	while(<$read_progress>) { 
@@ -151,36 +150,23 @@ sub _do_max_peak_calculation {
 	# -- Check if the peak calculation was completed in the previous runs: i.e. is the number of genes in the hash hash_chr_genes_processed equal to the total nb of genes in boundaris BED
 	my $size= 0 ;
 	foreach ( values %hash_chr_genes_processed ) { $size += @$_ }
-	#$log->debug(">>>>>>>>> In peak calculation: check the total nb of genes: " . $totalNbGenes-1 . " versus " . $size . " >>>>>>>>>");
 	$log->debug(">>>>>>>>> In peak calculation: check the total nb of genes: " . $totalNbGenes . " versus " . $size . " >>>>>>>>>");
-	#$size = 20320;
-	#$log->debug(">>>>>>>>> In peak calculation: check the total nb of genes: " . $totalNbGenes . " versus " . $size . " FAKE FAKE FAKE!!!!!!!!! >>>>>>>>>");
-	#if ($size != $totalNbGenes-1) { ## header line exists
 	my $tag_return_peakoutput_filename = 1;
 	if ($size != $totalNbGenes) { 
 		# end of progress check	
 		$log->logcroak("Unable to create tabix object") if (!$tabix);
 		# get chromosome names
 		my @chrnames=$tabix->getnames;
-		###
 		# -- add gene_counter
 		my $gene_counter = 0;
 		foreach my $chr (@chrnames) {
-			#next if (grep (/^$chr$/, @chr_analysed));
 			if (grep (/^$chr$/, @chr_analysed)) { 
 				$log->debug(">>>>>>>Calculating peak for chromosome (continue): $chr ");
 			} else {
 				$log->debug(">>>>>>>Calculating peak for chromosome: $chr ");
 			}
-			# -- Extract list of genes already processed for this chromosome ## WARNING: just now extracts all the genes processed (not just those for the specific $chr)
-			# -- Extract list of genes already processed for this chromosome ## WARNING: fixed: now only for the selected chr
+			# -- Extract list of genes already processed for this chromosome 
 			my @genes_analysed = ();
-			#while( my( $tag_chr, @tag_genes ) = each %hash_chr_genes_processed ){
-			#	if ($tag_chr==$chr) {
-			#		print "AAAAAA::CHR::".$tag_chr."\tGENE::".$tag_gene."\n" ;
-			#		push @genes_analysed, @tag_gene;
-			#	}
-			#}
 			foreach my $tag_chr (keys %hash_chr_genes_processed) {
 				foreach (@{$hash_chr_genes_processed{$tag_chr}}) {
 					if ($tag_chr==$chr) {
@@ -189,11 +175,6 @@ sub _do_max_peak_calculation {
 					}
 				}
 			}
-			#my $debug_file="debug_content_array_genes_analysed.log";
-			#open(my $DEBUG_FILE, '>', $debug_file) or die $!;
-			#print $DEBUG_FILE join('\n', @genes_analysed) ;
-			## print $DEBUG_FILE shift @genes_analysed ;
-			#close($DEBUG_FILE);
 			# --
 			my ($peak_data, $counter);
 			my $res = $tabix->query($chr);
@@ -201,7 +182,6 @@ sub _do_max_peak_calculation {
 					chomp;
 					my ($chr,$start,$end,$gene)=(split "\t", $record) [0,1,2,3];
 					$gene =~ s/^\s+|\s+$//g;
-					# print "DEBUG_GENE:==>" . $gene . "<==\n" ;
 					# -- skip the genes already processed  
 					next if (grep (/^$gene$/, @genes_analysed));
 					$counter++;
@@ -217,8 +197,7 @@ sub _do_max_peak_calculation {
 					print $progress_fh $chr."\t".$gene."\n";
 					# -- Check if 1K genes processed then exit to empty all created objects - workaround "too many open files" bug..
 					$gene_counter++;
-					#if($gene_counter % 10 == 0) { ####################### WARNING: CHANGE TO 100 FOR TESTING
-					if($gene_counter % 1000 == 0) { ####################### WARNING: CHANGE TO 1K
+					if($gene_counter % 1000 == 0) { 
 						$self->_print_peak($peak_data,$peak_fh);
 						close($peak_fh);
 						if ($tag_return_peakoutput_filename == 1) {
@@ -231,13 +210,11 @@ sub _do_max_peak_calculation {
 			# -- print peak data for each chromosome
 			$self->_print_peak($peak_data,$peak_fh);
 			close($peak_fh);
-			# print($peak_out); ############################ add 2015_09_03...
 			if ($tag_return_peakoutput_filename == 1) {
-				print($peak_out); ############################ add 2015_09_03...
+				print($peak_out);
 				$tag_return_peakoutput_filename = 0;
 			}
 			$log->debug(">>>>>>>>> Completed peak calculation for chromosome: $chr ===>".$counter.' gene >>>>>>>>>');
-			# print $progress_fh $chr."\n";
 		}
 	} ## end of size check on nb of genes processed
 	else {
@@ -249,7 +226,6 @@ sub _do_max_peak_calculation {
 		PeakRescue::Base->_run_cmd($cmd_success);
 		$log->debug(">>>>>>>>> In peak calculation: created an output file " . $successOutputPeakCalculation . " to specify that this step is complete  >>>>>>>>>");
 		# -- Copy tmp concatenated file to the output directory to proceed with the rest of the pipeline
-		## $peak_out ### my $mainPeakOutput = "starAligned.out_combined_sorted_peak.txt";
 		my $tmpConcatenatedPeaksFile = $self->options->{'o'}."/tmp_concatenate_peakouts/tmp_peakout.tsv";
 		my $cmd = "cp $tmpConcatenatedPeaksFile $peak_out";
 		PeakRescue::Base->_run_cmd($cmd);
