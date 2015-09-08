@@ -3,8 +3,8 @@ use PeakRescue;
 our $VERSION = PeakRescue->VERSION;
 
 use strict;
-use Bio::DB::Sam;
 
+use Bio::DB::Sam;
 use Tabix;
 use FindBin qw($Bin);
 use List::Util qw(max min);
@@ -96,12 +96,11 @@ Inputs
 
 sub _get_bam_object {
 	my ($self,$bam_file)=@_;
-		my $bam = Bio::DB::Sam->new(-bam => $bam_file,
-															-fasta => $self->options->{'g'},
-															-expand_flags => 1,
-															-split_splices => 1
-															);
-		$bam->max_pileup_cnt($MAX_PILEUP_DEPTH); # changes default coverage cap from 8000 to $new_value
+    my $bam = Bio::DB::Sam->new(-bam => $bam_file,
+	 													-expand_flags => 1,
+	 													-split_splices => 1
+	 													);
+	 $bam->max_pileup_cnt($MAX_PILEUP_DEPTH); # changes default coverage cap from 8000 to $new_value
 		return $bam;
 }
 
@@ -134,6 +133,10 @@ sub _do_max_peak_calculation {
 	$log->logcroak("Unable to create tabix object") if (!$tabix);
 	# get chromosome names
 	my @chrnames=$tabix->getnames;
+	# get bam header to write
+  my $bam_header=$bam_object->header;
+	# assign tmp file name
+	my $tmp_gene_file=$self->options->{'tmpdir_peak'}.'/tmp_gene.bam';
 	###
 	foreach my $chr (@chrnames) {
 		next if (grep (/^$chr$/, @chr_analysed));
@@ -150,7 +153,7 @@ sub _do_max_peak_calculation {
 					#$self->_print_peak($peak_data,$peak_fh);
 					#$peak_data=();
 				}
-				my($max_peak)=$self->_get_gene_bam_object($bam_object,$chr,$start,$end,$gene,$tabix_gt);
+				my($max_peak)=$self->_get_gene_bam_object($bam_object,$chr,$start,$end,$gene,$tabix_gt,$bam_header,$tmp_gene_file);
 			$peak_data->{$gene}=$max_peak;
 			}
 		#print peak data for each chromosome
@@ -198,14 +201,12 @@ Inputs
 =cut
 
 sub _get_gene_bam_object {
-my ($self,$bam_object,$chr,$start,$end,$gene,$tabix_gt)=@_;
-	my $tmp_gene_file=$self->options->{'tmpdir_peak'}.'/tmp_gene.bam';
+	my ($self,$bam_object,$chr,$start,$end,$gene,$tabix_gt,$header_line,$tmp_gene_file)=@_;
 	# create bio db bam object
-	my $bam = Bio::DB::Bam->open($tmp_gene_file,'w');
-	
+  my $bam = Bio::DB::Bam->open($tmp_gene_file,'w');
 	#write header
-	$bam->header_write($bam_object->header);
-	# create temp file
+	$bam->header_write($header_line);
+# create temp file
 	my $read_flag=undef;
 	$bam_object->fetch("$chr:$start-$end", sub {
 		my $a = shift;
@@ -231,15 +232,17 @@ my ($self,$bam_object,$chr,$start,$end,$gene,$tabix_gt)=@_;
 		return "0";
 	} 
 	Bio::DB::Bam->index_build($tmp_gene_file);
-
-	# name sorted bam required for clipOver
+	#name sorted bam required for clipOver
 	
 	#----------biodbsam------------------- Option1
 	if($self->options->{'alg'} eq 'biodbsam') {
 	  # create tmp file
 		my ($gene_bam)=$self->_get_bam_object($tmp_gene_file);	
 		my ($coverage) = $gene_bam->features(-type => 'coverage', -seq_id => $chr, -start => $start, -end => $end);
-		return max($coverage->coverage);
+		my $cov = max($coverage->coverage);
+		undef $coverage;
+		undef $gene_bam;
+		return $cov;
 	}
 	#------------ClipOver------------------Option2
 	elsif($self->options->{'alg'} eq 'clipover') {
@@ -250,7 +253,10 @@ my ($self,$bam_object,$chr,$start,$end,$gene,$tabix_gt)=@_;
 		my($clipped_bam)=$self->_run_clipOver("$tmp_gene_sorted.bam");
 		my ($gene_bam)=$self->_get_bam_object($clipped_bam);	
 		my ($coverage) = $gene_bam->features(-type => 'coverage', -seq_id => $chr, -start => $start, -end => $end);
-		return max($coverage->coverage);
+		my $cov = max($coverage->coverage);
+		undef $coverage;
+		undef $gene_bam;
+		return $cov;
 	}
 	#-------------mpileup------------------Option3
 	elsif ($self->options->{'alg'} eq 'mpileup') {	
@@ -338,6 +344,7 @@ sub _get_intervals{
 	while(my $record = $tabix->read($res)){		
 		print $gt_fh $record;
 	}
+	close $gt_fh;
 	return $tmp_gt_file;
 }
 
@@ -359,6 +366,7 @@ sub _parse_gatk {
 		my ($cov) = (split "\t", $_)[2];
 		$max = $cov if $cov > $max;
 	}
+	close $cov_fh;
 	return $max;
 }
 
