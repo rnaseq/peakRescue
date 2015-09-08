@@ -94,11 +94,11 @@ Check python version: python -V # this should be the version you used to install
 
 cd peakRescue-3.2.7/
 
-./setup.sh  /path_to_install_dir
+/bin/bash ./setup.sh  /path_to_install_dir
 
 # Running PeakRescue
 
-/bin/bash ./bin/runPeakRescue.pl -bam datasets/chr21.bam -gtf datasets/chr21.gtf.gz -g datasets/chr21.fa -alg clipover -o output
+perl ./bin/runPeakRescue.pl -bam datasets/chr21.bam -gtf datasets/chr21.gtf.gz -g datasets/chr21.fa -alg clipover -o output
 
 #### choosing algorithm [-alg] option
 
