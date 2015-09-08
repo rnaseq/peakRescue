@@ -6,7 +6,7 @@ PeakRescue is freely available under a GNU Public License.
 PeakRescue
 ===========
 
-PeakRescue is robust fragment counting method for RNA-seq data.
+PeakRescue is a robust fragment counting method for RNA-seq data.
 
 This tool takes BAM files produced using any splice aware aligner e.g, TopHat, STAR etc., and  produces fragment count data per gene. 
 
@@ -63,6 +63,10 @@ https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
 
 wget https://github.com/rnaseq/peakRescue/archive/3.2.6.tar.gz
 
+tar -xvzf 3.2.6.tar.gz
+
+cd peakRescue-3.2.6/
+
 ##### for development only 
 git clone https://github.com/rnaseq/peakRescue.git
 
@@ -88,7 +92,7 @@ Check python version: python -V # this should be the version you used to install
 
 # Installing PeakRescue
 
-cd peakRescue
+cd peakRescue-3.2.6/
 
 ./setup.sh  /path_to_install_dir
 
