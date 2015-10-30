@@ -61,11 +61,11 @@ https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
 
 #### Download PeakRescue
 
-wget https://github.com/rnaseq/peakRescue/archive/3.2.8.tar.gz
+wget https://github.com/rnaseq/peakRescue/archive/x.x.x.tar.gz
 
-tar -xvzf 3.2.8.tar.gz
+tar -xvzf x.x.x.tar.gz
 
-cd peakRescue-3.2.8/
+cd peakRescue-x.x.x/
 
 ##### for development only 
 git clone https://github.com/rnaseq/peakRescue.git
@@ -92,7 +92,7 @@ Check python version: python -V # this should be the version you used to install
 
 # Installing PeakRescue
 
-cd peakRescue-3.2.8/
+cd peakRescue-x.x.x/
 
 /bin/bash ./setup.sh  /path_to_install_dir
 
