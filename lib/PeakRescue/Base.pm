@@ -81,9 +81,9 @@ sub _run_cmd {
 	if($exit) {
 			$log->logcroak("Failed to run <<<<<<< \n $cmd  <<<<<< \n with status <<<<<< \n OUT:\n $out  :ERR:\n $stderr EXIT:\n $exit \n <<<<<<< \n");
 	}
-	else {
-		$log->debug("\ncommand <<<<<< \n $cmd \nrun successfully <<<<<<<<< ");
-	}
+	#else {
+	#	$log->debug("\ncommand <<<<<< \n $cmd \nrun successfully <<<<<<<<< ");
+	#}
 	return $out;
 }
 
