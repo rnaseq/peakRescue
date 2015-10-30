@@ -79,6 +79,8 @@ sub run_pipeline {
   $self->_process_sam;
   $self->_process_gtf;
   $self->_get_peak;
+	#$log->debug("Exit for testing");
+	#return 1;
   my ($flag)= $self->_runPeakrescue;
 	if($flag) {
 		$self->_process_output;
@@ -116,22 +118,32 @@ sub _run_htseq {
 	$self->options->{'htseq_count'}=$self->options->{'tmpdir_pipeline'}.'/'.$self->options->{'f'}.'_htseq_count.out';
 	if (-e $self->options->{'htseq_count'} ) { $log->debug("Outfile exists:".$self->options->{'htseq_count'}." Skipping <<< _run_htseq >>> step"); return;}
 	# requires read name sorted sam file...
-	my $cmd = "$Bin/samtools sort -on ".
-		$self->options->{'bam'}." ".$self->options->{'tmpdir_pipeline'}."/tmpsort_1 | ".
-		"$Bin/samtools view - | ".
+	my $cmd = "$Bin/samtools sort -on ".$self->options->{'bam'}.' '.$self->options->{'tmpdir_pipeline'}.'/tmpsort >'.$self->options->{'tmpdir_pipeline'}.'/tmpsort.bam';
+	if(! -s $self->options->{'tmpdir_pipeline'}.'/tmpsort.bam'){
+		PeakRescue::Base->_run_cmd($cmd);
+	}
+  else{
+	$log->debug("File exists :".$self->options->{'tmpdir_pipeline'}.'/tmpsort.bam');
+	}
+	  $cmd = "$Bin/samtools view ".$self->options->{'tmpdir_pipeline'}."/tmpsort.bam | ".
 		"python ".
 		" $Bin/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts/count_peakRescue_step1.py ".
-			"--mode=union ".
-			"--stranded=no ".
-			"--samout=".$self->options->{'htseq_sam'}.
+			" --mode=union ".
+			" --stranded=".$self->options->{'st'}.
+			" --samout=".$self->options->{'htseq_sam'}.
 			" --type=exon ".
-			"--idattr=gene_id ". 
+			" --idattr=gene_id ". 
 			"- ".
 			$self->options->{'gtf'}.
 			" >".$self->options->{'htseq_count'};
 	# run command
-	PeakRescue::Base->_run_cmd($cmd);
-	
+	if(! -s $self->options->{'htseq_sam'}){
+		PeakRescue::Base->_run_cmd($cmd);
+	}
+  else{
+		$log->debug("File exists :".$self->options->{'htseq_sam'});
+	}
+	return 1;
 }
 
 =head2 _run_htseq_disambiguate
@@ -155,9 +167,9 @@ sub _run_htseq_disambiguate {
   my $cmd = "grep -P \"ambiguous|alignment_not_unique\" ".$self->options->{'htseq_sam'}.
 		" | python ".
 		" $Bin/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts/count_peakRescue_step2.py ".
-			"--mode=union ".
-			"--stranded=no ".
-			"--samout=".$self->options->{'disambiguated_sam'}.
+			" --mode=union ".
+			" --stranded=".$self->options->{'st'}.
+			" --samout=".$self->options->{'disambiguated_sam'}.
 			" --type=exon ".
 			"--idattr=gene_id ". 
 			"- ".
@@ -230,6 +242,7 @@ Inputs
 sub _process_gtf {
 	my ($self)=@_;
 	$self->options->{'u'}=1;
+	$self->options->{'a'}=1;
 	my $gt=PeakRescue::GlobalTranscript->new($self->options);
 	undef $gt;
 }

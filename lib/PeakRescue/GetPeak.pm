@@ -97,8 +97,19 @@ Inputs
 sub _get_bam_object {
 	my ($self,$bam_file)=@_;
     my $bam = Bio::DB::Sam->new(-bam => $bam_file,
-	 													-expand_flags => 1,
-	 													-split_splices => 1
+	 													-expand_flags => 1
+	 													#-split_splices => 1
+	 													);
+	 #$bam->max_pileup_cnt($MAX_PILEUP_DEPTH); # changes default coverage cap from 8000 to $new_value
+		return $bam;
+}
+
+
+sub _get_sub_bam_object {
+	my ($self,$bam_file)=@_;
+    my $bam = Bio::DB::Sam->new(-bam => $bam_file
+	 													#-expand_flags => 1,
+	 													#-split_splices => 1
 	 													);
 	 $bam->max_pileup_cnt($MAX_PILEUP_DEPTH); # changes default coverage cap from 8000 to $new_value
 		return $bam;
@@ -119,11 +130,11 @@ sub _do_max_peak_calculation {
 	my($tabix_gt)=$self->_get_tabix_object($self->options->{'gt'});
 	my $peak_out=$self->options->{'o'}.'/'.$self->options->{'f'}.'_peak.txt';
 	$self->options->{'sample_peak'}=$peak_out;
-	if (-e $self->options->{'sample_peak'} ) { $log->debug("Outfile exists:".$self->options->{'sample_peak'}."Skipping _do_max_peak_calculation step"); return;}
+	#if (-e $self->options->{'sample_peak'} ) { $log->debug("Outfile exists:".$self->options->{'sample_peak'}."Skipping _do_max_peak_calculation step"); return;}
 	open(my $peak_fh, '>>', $peak_out);
 	# check progress required as this is long process if beaks in between can be restarted from where it left using progress file
 	my $progress_file=$self->options->{'o'}.'/'.'progress.txt';
-	if( -e $progress_file) { $log->info("Progress file exists, analysis will be resumed, to restart analysis please remove progress file"); }
+	#if( -s $progress_file) { $log->info("Progress file exists, analysis will be resumed, to restart analysis please remove progress file"); }
 	# open file in res write and append mode
 	open(my $progress_fh, '>>', $progress_file);
 	open(my $read_progress, '<', $progress_file);
@@ -140,25 +151,36 @@ sub _do_max_peak_calculation {
 	###
 	foreach my $chr (@chrnames) {
 		next if (grep (/^$chr$/, @chr_analysed));
-		$log->debug(">>>>>>>Calculating peak for chromosome: $chr ");
+		if( -s $progress_file) { $log->info("Progress file written [$progress_file], calculating peak for : $chr "); }
+		#last if $chr eq 'chr21';  
+		#$log->debug(">>>>>>> RUNNING TEST Calculating peak for chromosome: $chr ");
 		my ($peak_data, $counter);
-		my $res = $tabix->query($chr);
-			while(my $record = $tabix->read($res)){		
-				chomp;
-				my ($chr,$start,$end,$gene)=(split "\t", $record) [0,1,2,3];
-				$counter++;
-				if($counter % 100 == 0) {
-					$log->debug("Calculated peak for chromosome: $chr ==>".$counter.' genes');
-					# can be used if hash is running out of memory
-					#$self->_print_peak($peak_data,$peak_fh);
-					#$peak_data=();
-				}
-				my($max_peak)=$self->_get_gene_bam_object($bam_object,$chr,$start,$end,$gene,$tabix_gt,$bam_header,$tmp_gene_file);
-			$peak_data->{$gene}=$max_peak;
+ 		my $res = $tabix->query($chr);
+		#if(!defined $res->get) {
+		#	$res = $tabix->query("chr$chr");
+		#}
+		#if(defined $res->get) {
+		while(my $record = $tabix->read($res)){		
+			chomp;
+			my ($chr,$start,$end,$gene)=(split "\t", $record) [0,1,2,3];
+			$counter++;
+			if($counter % 100 == 0) {
+				$log->debug("Calculated peak for chromosome: $chr ==>".$counter.' genes');
+				# can be used if hash is running out of memory
+				#$self->_print_peak($peak_data,$peak_fh);
+				#$peak_data=();
 			}
+			#my($max_peak)=$self->_get_gene_bam_object($bam_object,$chr,$start,$end,$gene,$tabix_gt,$bam_header,$tmp_gene_file);
+			$peak_data->{$gene}=$self->_get_gene_bam_object($bam_object,$chr,$start,$end,$gene,$tabix_gt,$bam_header,$tmp_gene_file);
+		}
+		#}
+		#else{
+		#	$log->croak("Unable to query GTF with $chr, please check chromosme name matches with GTF record");
+		#}
 		#print peak data for each chromosome
 		$self->_print_peak($peak_data,$peak_fh);
-		$log->debug(">>>>>>>>> Completed peak calculation for chromosome: $chr ===>".$counter.' gene >>>>>>>>>');
+		$peak_data=();
+		$log->debug(">>>>>>>>>Completed peak calculation for chromosome: $chr ===>".$counter.' gene >>>>>>>>>');
 		print $progress_fh $chr."\n";
 	}
 	close($peak_fh);
@@ -217,10 +239,11 @@ sub _get_gene_bam_object {
 		return if $flags & $DUP_READ;
 		#return if $flags & $SUPP_ALIGNMENT;
 		# exact match with XF tag value
-		if ($a->get_tag_values('XF') eq $gene) {
-			$bam->write1($a->{'align'});
-			$read_flag=1;
-		}elsif($a->aux=~ m/XF:Z:$gene/){
+		#if ($a->get_tag_values('XF') eq $gene) {
+		#	$bam->write1($a->{'align'});
+		#	$read_flag=1;
+		#}
+		if($a->aux=~ m/XF:Z:$gene$/){
 			$bam->write1($a->{'align'});
 			$read_flag=1;
 		}
@@ -237,7 +260,7 @@ sub _get_gene_bam_object {
 	#----------biodbsam------------------- Option1
 	if($self->options->{'alg'} eq 'biodbsam') {
 	  # create tmp file
-		my ($gene_bam)=$self->_get_bam_object($tmp_gene_file);	
+		my ($gene_bam)=$self->_get_sub_bam_object($tmp_gene_file);	
 		my ($coverage) = $gene_bam->features(-type => 'coverage', -seq_id => $chr, -start => $start, -end => $end);
 		my $cov = max($coverage->coverage);
 		undef $coverage;
@@ -251,7 +274,7 @@ sub _get_gene_bam_object {
 		# read name sorted bam file
 		Bio::DB::Bam->sort_core(1,$tmp_gene_file,$tmp_gene_sorted);
 		my($clipped_bam)=$self->_run_clipOver("$tmp_gene_sorted.bam");
-		my ($gene_bam)=$self->_get_bam_object($clipped_bam);	
+		my ($gene_bam)=$self->_get_sub_bam_object($clipped_bam);	
 		my ($coverage) = $gene_bam->features(-type => 'coverage', -seq_id => $chr, -start => $start, -end => $end);
 		my $cov = max($coverage->coverage);
 		undef $coverage;
@@ -340,7 +363,11 @@ sub _get_intervals{
 	my($self,$tabix,$chr,$start,$end)=@_;
 	my $tmp_gt_file=$self->options->{'tmpdir_peak'}.'/tmp.list';
 	open(my $gt_fh,'>',$tmp_gt_file);
-	my $res = $tabix->query($chr,$start,$end);
+		my $res=undef;
+		$res = $tabix->query($chr,$start,$end);
+		if(!defined $res) {
+      $res = $tabix->query("chr$chr",$start,$end);
+		}
 	while(my $record = $tabix->read($res)){		
 		print $gt_fh $record;
 	}
