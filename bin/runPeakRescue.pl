@@ -73,7 +73,7 @@ Required Options (bam and gtf and genome files must be defined):
   --gtfFile           (-gtf) genome gtf file 
   --genomeFasta       (-g) fasta reference genome file 
   --algorithm         (-alg) algorithm to be use for coverage calculation [ biodbsam, clipover, mpileup, gatk ]
-  --stranded					(-st) Stranded data [ default no ]
+  --stranded          (-st) Stranded data [yes,no,reverse : default no ]
   --outdir            (-o) outdir [ Path to output directory ]
   
 Optional :
