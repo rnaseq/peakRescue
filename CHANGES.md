@@ -1,3 +1,7 @@
+
+### 3.2.13
+* Updated expcted input for stranded option 
+
 ### 3.2.12
 * Added option for stranded RNA-seq 
 
