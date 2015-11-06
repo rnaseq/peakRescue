@@ -56,7 +56,9 @@ sub _init {
   }
 	mkpath($options->{'o'}.'/'.'tmp_runPeakRescue');
 	$options->{'tmpdir_pipeline'}=$options->{'o'}.'/'.'tmp_runPeakRescue';
-	
+	if(!defined $options->{'st'}) {
+	 $options->{'st'}='no';
+	}	
 	$self->{'options'} = $options;
 	
 	$log->debug("Using bam file:".$options->{'bam'});
