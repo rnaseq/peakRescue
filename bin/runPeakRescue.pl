@@ -36,6 +36,7 @@ sub option_builder {
 					'gtf|gtfFile=s' => \$opts{'gtf'},
 					'g|genomeFasta=s' => \$opts{'g'},
 					'alg|algorithm=s' => \$opts{'alg'},
+					'st|stranded=s' => \$opts{'st'},
 					'o|outdir=s'  => \$opts{'o'},
 					'v|version'  => \$opts{'v'},
 	);
@@ -64,14 +65,15 @@ runPeakRescue.pl - run PeakRescue pipeline
 
 =head1 SYNOPSIS
 
-runPeakRescue.pl  -bam -gtf -g -a -o [ -h -v ]
+runPeakRescue.pl  -bam -gtf -g -o -alg [-st -h -v ]
 
-Required Options (bam and bed interval files must be defined):
+Required Options (bam and gtf and genome files must be defined):
 
   --sampleBam         (-bam) sample bam file 
   --gtfFile           (-gtf) genome gtf file 
   --genomeFasta       (-g) fasta reference genome file 
   --algorithm         (-alg) algorithm to be use for coverage calculation [ biodbsam, clipover, mpileup, gatk ]
+  --stranded					(-st) Stranded data [ default no ]
   --outdir            (-o) outdir [ Path to output directory ]
   
 Optional :
@@ -79,6 +81,6 @@ Optional :
   --version          (-v) displays version number of this software
 
   Example:
-      perl runPeakRescue.pl -bam test.bam -gtf test.gtf -g test.fa -o testdir
+      perl runPeakRescue.pl -bam test.bam -gtf test.gtf -g test.fa -alg clipover -o testdir
 =cut
 

@@ -100,7 +100,7 @@ sub _get_bam_object {
 	 													-expand_flags => 1
 	 													#-split_splices => 1
 	 													);
-	 #$bam->max_pileup_cnt($MAX_PILEUP_DEPTH); # changes default coverage cap from 8000 to $new_value
+	 $bam->max_pileup_cnt($MAX_PILEUP_DEPTH); # changes default coverage cap from 8000 to $new_value
 		return $bam;
 }
 
