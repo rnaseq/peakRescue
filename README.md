@@ -14,11 +14,11 @@ This tool takes BAM files produced using any splice aware aligner e.g, TopHat, S
 
 ##Dependencies
 
-Python 2.5+ (< 3)
+Python 2.5+ (< 3) - tested with python 2.6.6.
 
 Perl 5.14.2+
 
-Tested on various Unix platforms [ Not tested on Mac OS X]
+Tested on various Unix platforms [ Not tested on Mac OS X].
 
 #### Note
 
@@ -26,7 +26,21 @@ Please read the Licensing agreement for respective tools before downloading them
 
 #### Manual installation
 
-Please install the following tools before running setup.sh script and make sure that the path is set in config/peakrescue.ini file 
+##### Python packages
+
+###### Python package numpy
+
+Please note peakRescue was tested with numpy version 1.6.2 installed for python 2.6.6.
+
+https://pypi.python.org/pypi/numpy/1.6.2
+
+###### Python package cython 
+
+Please note peakRescue was tested with cython version 0.22 installed for python 2.6.6.
+
+https://pypi.python.org/pypi/Cython/0.22
+
+###### Please install the following tools before running setup.sh script and make sure that the path is set in config/peakrescue.ini file 
 
 GATK - https://github.com/broadgsa/gatk-protected [ required only if user want to use algorithm option - gatk for coverage calculation ] 
 
@@ -71,7 +85,7 @@ cd peakRescue-x.x.x/
 git clone https://github.com/rnaseq/peakRescue.git
 
 
-#### Install HTSeq within peakRescue
+#### Install HTSeq within peakRescue (tested with python 2.6.6) 
 
 cd bin/HTSeq-0.5.3p3_peakRescue
 
@@ -79,15 +93,13 @@ python setup.py install --user
 
 If you have any issue installing this package, please see instructions at: http://www-huber.embl.de/users/anders/HTSeq/doc/install.html
 
-#### Update ~/.bashrc with the python version used to install HTSeq
+#### Update ~/.bashrc with the python version used to install HTSeq (tested with python 2.6.6).
 
 Edit your ~/.bashrc and add the following line - replacing 'full_path_to_your_python_installation_dir' to your own python path: alias python='full_path_to_your_python_installation_dir/python'
 
 Save ~/.bashrc & quit.
 
-Update environment variables with the following command: source ~/.bashrc
-
-Check python version: python -V # this should be the version you used to install HTSeq.
+Update environment variables with the following command: source ~/.bashrc. Check python version: python -V # this should be the version you used to install HTSeq.
 
 
 # Installing PeakRescue
