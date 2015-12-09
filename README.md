@@ -14,7 +14,7 @@ This tool takes BAM files produced using any splice aware aligner e.g, TopHat, S
 
 ##Dependencies
 
-Python 2.5+ (< 3) - tested with python 2.6.6.
+Python 2.5+ (< 3) - Please note peakRescue was tested with python 2.6.6.
 
 Perl 5.14.2+
 
@@ -30,13 +30,13 @@ Please read the Licensing agreement for respective tools before downloading them
 
 ###### Python package numpy
 
-Please note peakRescue was tested with numpy version 1.6.2 installed for python 2.6.6.
+Please note peakRescue was tested with numpy version 1.6.2:
 
 https://pypi.python.org/pypi/numpy/1.6.2
 
 ###### Python package cython 
 
-Please note peakRescue was tested with cython version 0.22 installed for python 2.6.6.
+Please note peakRescue was tested with cython version 0.22:
 
 https://pypi.python.org/pypi/Cython/0.22
 
@@ -85,7 +85,7 @@ cd peakRescue-x.x.x/
 git clone https://github.com/rnaseq/peakRescue.git
 
 
-#### Install HTSeq within peakRescue (tested with python 2.6.6) 
+#### Install HTSeq within peakRescue
 
 cd bin/HTSeq-0.5.3p3_peakRescue
 
@@ -93,13 +93,15 @@ python setup.py install --user
 
 If you have any issue installing this package, please see instructions at: http://www-huber.embl.de/users/anders/HTSeq/doc/install.html
 
-#### Update ~/.bashrc with the python version used to install HTSeq (tested with python 2.6.6).
+#### Update .bashrc with the python version used to install numpy, cython and HTSeq.
 
 Edit your ~/.bashrc and add the following line - replacing 'full_path_to_your_python_installation_dir' to your own python path: alias python='full_path_to_your_python_installation_dir/python'
 
 Save ~/.bashrc & quit.
 
-Update environment variables with the following command: source ~/.bashrc. Check python version: python -V # this should be the version you used to install HTSeq.
+Update environment variables with the following command: source ~/.bashrc. 
+
+Check the use of the required python version: python -V.
 
 
 # Installing PeakRescue
