@@ -277,19 +277,22 @@ Inputs
 
 sub _runPeakrescue {
 	my ($self)=@_;
-  $self->options->{'final_output'}= $self->options->{'o'}.'/peakRescueFinalCount.out';	
+	$self->options->{'final_output'}= $self->options->{'o'}.'/peakRescueFinalCount.out';	
 	if (-e $self->options->{'final_output'} ) { $log->debug("Outfile exists:".$self->options->{'final_output'}." Skipping <<< _runPeakrescue >>> step"); return 0;}
-  #my $combinedReadNameGeneName = $self->options->{'tmpdir_pipeline'}.'/tmpCombinedRNGN.tab';
+	# Dev: if we would like to analyse all reads in single pass
+  	#my $combinedReadNameGeneName = $self->options->{'tmpdir_pipeline'}.'/tmpCombinedRNGN.tab';
 	#my $cmd_cat = "cat ".$self->options->{'amb_rngn'}." ".$self->options->{'multimapped_rngn'}." > $combinedReadNameGeneName";
 	#PeakRescue::Base->_run_cmd($cmd_cat);
-	
-	# we can choose which file type to use 
-	 $self->_runReadToGeneAssignment($self->options->{'multimapped_rngn'},'multimappers');
-	 $self->_runReadToGeneAssignment($self->options->{'amb_rngn'},'ambiguous_unique');
-	 
-	 # if we would like to analyse all reads in single pass
-	 #$self->_runReadToGeneAssignment($combinedReadNameGeneName,'combined');
-	 
+	# -- Assign multimapped reads' proportions to genes
+	$log->info("Running probabilistic assignment of multimapped reads... ");
+	$self->_runReadToGeneAssignment($self->options->{'multimapped_rngn'},'multimappers');
+	$log->info("Probabilistic assignment of multimapped reads: completed.");
+	# -- Assign ambiguous uniquely mapped reads' proportions to genes
+	$log->info("Running probabilistic assignment of ambiguous uniquely mapped reads...");
+	$self->_runReadToGeneAssignment($self->options->{'amb_rngn'},'ambiguous_unique');
+	$log->info("Probabilistic assignment of ambiguous uniquely mapped reads: completed.");
+	# Dev: if we would like to analyse all reads in single pass
+	#$self->_runReadToGeneAssignment($combinedReadNameGeneName,'combined');
 }
 
 =head2 _runReadToGeneAssignment
