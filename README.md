@@ -26,8 +26,6 @@ Please read the Licensing agreement for respective tools before downloading them
 
 #### Manual installation
 
-##### Python packages
-
 ###### Python package numpy
 
 Please note peakRescue was tested with numpy version 1.6.2:
