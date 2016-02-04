@@ -28,13 +28,13 @@ Please read the Licensing agreement for respective tools before downloading them
 
 ###### Python package numpy
 
-Please note peakRescue was tested with numpy version 1.6.2:
+peakRescue was tested with numpy version 1.6.2:
 
 https://pypi.python.org/pypi/numpy/1.6.2
 
 ###### Python package cython 
 
-Please note peakRescue was tested with cython version 0.22:
+peakRescue was tested with cython version 0.22:
 
 https://pypi.python.org/pypi/Cython/0.22
 
@@ -56,7 +56,7 @@ https://github.com/samtools/samtools/archive/1.2.tar.gz
 
 Bio::DB::Sam - http://search.cpan.org/~lds/Bio-SamTools/lib/Bio/DB/Sam.pm 
 
-http://search.cpan.org/CPAN/authors/id/L/LD/LDS/Bio-SamTools-1.41.tar.gz
+http://search.cpan.org/CPAN/authors/id/L/LD/LDS/Bio-SamTools-1.42.tar.gz
 
 BamUtil - http://genome.sph.umich.edu/wiki/BamUtils 
 

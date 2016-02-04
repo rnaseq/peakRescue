@@ -19,7 +19,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##########LICENCE##########
 
-SOURCE_SAMTOOLS="https://github.com/samtools/samtools/archive/0.1.20.tar.gz"
+SOURCE_SAMTOOLS="https://github.com/samtools/samtools/archive/0.1.17.tar.gz"
 SOURCE_TABIX="https://github.com/sb43/tabix/archive/0.2.6.tar.gz" 
 SOURCE_BAMUTIL="https://github.com/statgen/bamUtil/archive/v1.0.13.tar.gz"
 SOURCE_BEDTOOLS="https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz"
@@ -76,6 +76,7 @@ INIT_DIR=`pwd`
 mkdir -p $INST_PATH/bin
 mkdir -p $INST_PATH/config
 cp $INIT_DIR/bin/readToGeneAssignment.py $INST_PATH/bin/
+cp $INIT_DIR/bin/readToGeneAssignmentWithCython* $INST_PATH/bin/
 cp $INIT_DIR/config/log4perl.gt.conf $INST_PATH/config/
 cp $INIT_DIR/config/peakrescue.ini	$INST_PATH/config
 cp -rp $INIT_DIR/bin/HTSeq-0.5.3p3_peakRescue	$INST_PATH/bin/

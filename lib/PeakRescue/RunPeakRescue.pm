@@ -369,7 +369,9 @@ sub _process_output {
     push(@$line,$uc,$uc_d,$amb_tr,$amb_p,$mm_tr,$mm_p,$final_count,$length);
     $all_data->{$gene}=$line;
   }
-  
+
+  eval{$total_read_count= int($total_read_count + $total_read_count/abs($total_read_count*2));};
+ 
   open(my $fh_final,'>', $self->options->{'final_output'});
 	#fpkm loop 
 	print $fh_final 
