@@ -46,12 +46,13 @@ WriteMakefile(
                     'Pod::Usage' => '1.64',
                     'TAP::Harness' => '3.33',
                     'Try::Tiny' => '0.22',
-										'List::Util' => '1.27',
-										'File::Path' => '2.09',
-										'FindBin' => '1.50',
-										'File::Basename' => '2.82',
-										'File::Spec' => '3.40',
-										'Data::Dumper' => '2.145',
+		    'List::Util' => '1.27',
+		    'File::Path' => '2.09',
+		    'FindBin' => '1.50',
+	            'File::Basename' => '2.82',
+		    'File::Spec' => '3.40',
+		    'Data::Dumper' => '2.145',
+		    'Math::Round' => '0.07',
                    }
 );
 
