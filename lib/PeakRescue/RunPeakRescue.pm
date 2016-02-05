@@ -366,6 +366,7 @@ sub _process_output {
     my $final_count=($uc+$uc_d+$amb_p+$mm_p);
     $total_read_count+=$final_count;
     my $line;
+    eval{$final_count= int($final_count + $final_count/abs($final_count*2));};
     push(@$line,$uc,$uc_d,$amb_tr,$amb_p,$mm_tr,$mm_p,$final_count,$length);
     $all_data->{$gene}=$line;
   }
