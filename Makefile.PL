@@ -52,7 +52,6 @@ WriteMakefile(
 	            'File::Basename' => '2.82',
 		    'File::Spec' => '3.40',
 		    'Data::Dumper' => '2.145',
-		    'Math::Round' => '0.07',
                    }
 );
 
