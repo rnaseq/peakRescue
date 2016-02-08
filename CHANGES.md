@@ -2,6 +2,7 @@
 ### 3.2.16
 *Updated Bio-SamTools version to 1.42
 *Fractional Total read counts rounded to nearest integer 
+*Automated installtion of HTSeq(modified version) and readToGeneAssignment script.
 ### 3.2.15
 *updated README file 
 ### 3.2.14
