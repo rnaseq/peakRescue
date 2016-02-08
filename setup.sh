@@ -26,7 +26,7 @@ SOURCE_SAMTOOLS="https://github.com/samtools/samtools/archive/0.1.17.tar.gz"
 SOURCE_TABIX="https://github.com/sb43/tabix/archive/0.2.6.tar.gz" 
 SOURCE_BAMUTIL="https://github.com/statgen/bamUtil/archive/v1.0.13.tar.gz"
 SOURCE_BEDTOOLS="https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz"
-SOURCE_HTSEQ="https://github.com/sb43/HTSeq-0.5.3p3_PeakRescue/archive/HTSeq-0.5.3p3_PeakRescue.tar.gz"
+SOURCE_HTSEQ="$INIT_DIR/bin"
 SOURCE_R2G="$INIT_DIR/bin"
 
 done_message () {
@@ -203,7 +203,7 @@ if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then
 else
   (
     set -ex
-    get_distro $CURR_TOOL $CURR_SOURCE
+		cp -r $CURR_SOURCE/$CURR_TOOL $SETUP_DIR
     cd $SETUP_DIR/$CURR_TOOL
     python setup.py install --user
     cp -r $SETUP_DIR/$CURR_TOOL $INST_PATH/bin/
