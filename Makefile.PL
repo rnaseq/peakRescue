@@ -43,6 +43,7 @@ WriteMakefile(
                     'List::Util' => '1.41',
                     'Log::Log4perl' => '1.44',
                     'LWP::Simple' => '6.00',
+										'Math:Round' => '0.07'
                     'Pod::Usage' => '1.64',
                     'TAP::Harness' => '3.33',
                     'Try::Tiny' => '0.22',
