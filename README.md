@@ -100,7 +100,7 @@ git clone https://github.com/rnaseq/peakRescue.git
 
 cd peakRescue-x.x.x/
 
-/bin/bash ./setup.sh  <<path_to_install_dir>>
+/bin/bash ./setup.sh  \<path_to_install_dir\>
 
 # Running PeakRescue
 
