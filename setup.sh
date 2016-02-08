@@ -26,6 +26,7 @@ SOURCE_SAMTOOLS="https://github.com/samtools/samtools/archive/0.1.17.tar.gz"
 SOURCE_TABIX="https://github.com/sb43/tabix/archive/0.2.6.tar.gz" 
 SOURCE_BAMUTIL="https://github.com/statgen/bamUtil/archive/v1.0.13.tar.gz"
 SOURCE_BEDTOOLS="https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz"
+SOURCE_HTSEQ="https://github.com/sb43/HTSeq-0.5.3p3_PeakRescue/archive/HTSeq-0.5.3p3_PeakRescue.tar.gz"
 SOURCE_R2G="$INIT_DIR/bin"
 
 done_message () {
@@ -80,7 +81,7 @@ mkdir -p $INST_PATH/config
 cp $INIT_DIR/bin/readToGeneAssignment.py $INST_PATH/bin/
 cp $INIT_DIR/config/log4perl.gt.conf $INST_PATH/config/
 cp $INIT_DIR/config/peakrescue.ini	$INST_PATH/config
-cp -rp $INIT_DIR/bin/HTSeq-0.5.3p3_peakRescue	$INST_PATH/bin/
+#cp -rp $INIT_DIR/bin/HTSeq-0.5.3p3_peakRescue	$INST_PATH/bin/
 cp -rp $INIT_DIR/datasets/	$INST_PATH/datasets/
 cp -rp $INIT_DIR/README.md	$INST_PATH/README.md
 
@@ -188,6 +189,25 @@ else
     make
     cp -r bin/* $INST_PATH/bin/
     touch $SETUP_DIR/$CURR_TOOL.success
+  ) >>$INIT_DIR/setup.log 2>&1
+fi
+done_message "" "Failed to build $CURR_TOOL."
+
+# Install HTSeq
+
+CURR_TOOL="HTSeq-0.5.3p3_peakRescue"
+CURR_SOURCE=$SOURCE_HTSEQ
+
+echo -n "Building $CURR_TOOL ..."
+if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then
+  echo -n " previously installed ..."
+else
+  (
+    set -ex
+    get_distro $CURR_TOOL $CURR_SOURCE
+    cd $SETUP_DIR/$CURR_TOOL
+    python setup.py install --user
+    cp -r $SETUP_DIR/$CURR_TOOL $INST_PATH/bin/
   ) >>$INIT_DIR/setup.log 2>&1
 fi
 done_message "" "Failed to build $CURR_TOOL."
