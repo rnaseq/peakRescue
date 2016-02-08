@@ -38,7 +38,7 @@ peakRescue was tested with cython version 0.22:
 
 https://pypi.python.org/pypi/Cython/0.22
 
-###### Please install the following tools before running setup.sh script and make sure that the path is set in config/peakrescue.ini file 
+###### Please install following tools before running setup.sh script and make sure that the path is set in config/peakrescue.ini file[optional if using 'clipover' as coverage calculation option]
 
 GATK - https://github.com/broadgsa/gatk-protected [ required only if user want to use algorithm option - gatk for coverage calculation ] 
 
@@ -70,26 +70,11 @@ BedTools - http://bedtools.readthedocs.org/en/latest/
 
 https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz
 
+HTSeq-mod 
 
-#### Download PeakRescue
+https://github.com/sb43/HTSeq-0.5.3p3_PeakRescue/archive/HTSeq-0.5.3p3_PeakRescue.tar.gz
 
-wget https://github.com/rnaseq/peakRescue/archive/x.x.x.tar.gz
-
-tar -xvzf x.x.x.tar.gz
-
-cd peakRescue-x.x.x/
-
-##### for development only 
-git clone https://github.com/rnaseq/peakRescue.git
-
-
-#### Install HTSeq within peakRescue
-
-cd bin/HTSeq-0.5.3p3_peakRescue
-
-python setup.py install --user
-
-If you have any issue installing this package, please see instructions at: http://www-huber.embl.de/users/anders/HTSeq/doc/install.html
+If automated installation encountered any issue for this package, please see instructions at: http://www-huber.embl.de/users/anders/HTSeq/doc/install.html
 
 #### Update .bashrc with the python version used to install numpy, cython and HTSeq.
 
@@ -101,6 +86,15 @@ Update environment variables with the following command: source ~/.bashrc.
 
 Check the use of the required python version: python -V.
 
+#### Download PeakRescue
+
+wget https://github.com/rnaseq/peakRescue/archive/x.x.x.tar.gz
+
+tar -xvzf x.x.x.tar.gz
+
+##### for development only 
+
+git clone https://github.com/rnaseq/peakRescue.git
 
 # Installing PeakRescue
 
