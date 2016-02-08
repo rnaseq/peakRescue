@@ -1,4 +1,6 @@
 
+### 3.2.17
+*Added Math::Round module
 ### 3.2.16
 *Updated Bio-SamTools version to 1.42
 *Fractional Total read counts rounded to nearest integer 
