@@ -14,7 +14,7 @@ This tool takes BAM files produced using any splice aware aligner e.g, TopHat, S
 
 ##Dependencies
 
-Python 2.5+ (< 3) - Please note peakRescue was tested with python 2.6.6.
+Python 2.5+ (< 3) - Please note peakRescue was tested with python 2.6.6 and 2.7.10.
 
 Perl 5.14.2+
 
@@ -100,7 +100,7 @@ git clone https://github.com/rnaseq/peakRescue.git
 
 cd peakRescue-x.x.x/
 
-/bin/bash ./setup.sh  /path_to_install_dir
+/bin/bash ./setup.sh  <path_to_install_dir>
 
 # Running PeakRescue
 
