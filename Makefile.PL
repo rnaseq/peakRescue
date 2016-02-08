@@ -31,7 +31,7 @@ WriteMakefile(
 												)],
   PREREQ_PM     => {
                     'Attribute::Abstract' => '1.02',
-                    'Bio::DB::Sam' => '1.39',
+                    'Bio::DB::Sam' => '1.42',
                     'Bio::Root::Version' => '1.006924', 
                     'Capture::Tiny' => 0.24,
                     'Config::IniFiles' => '2.83',
@@ -46,12 +46,12 @@ WriteMakefile(
                     'Pod::Usage' => '1.64',
                     'TAP::Harness' => '3.33',
                     'Try::Tiny' => '0.22',
-										'List::Util' => '1.27',
-										'File::Path' => '2.09',
-										'FindBin' => '1.50',
-										'File::Basename' => '2.82',
-										'File::Spec' => '3.40',
-										'Data::Dumper' => '2.145',
+		    'List::Util' => '1.27',
+		    'File::Path' => '2.09',
+		    'FindBin' => '1.50',
+	            'File::Basename' => '2.82',
+		    'File::Spec' => '3.40',
+		    'Data::Dumper' => '2.145',
                    }
 );
 

@@ -10,6 +10,7 @@ use File::Path qw(mkpath remove_tree);
 use Capture::Tiny qw(:all);
 use File::Basename;
 use File::Spec;
+use Math::Round qw(round);
 use Data::Dumper;
 use Log::Log4perl;
 Log::Log4perl->init("$Bin/../config/log4perl.gt.conf");
@@ -279,19 +280,22 @@ Inputs
 
 sub _runPeakrescue {
 	my ($self)=@_;
-  $self->options->{'final_output'}= $self->options->{'o'}.'/peakRescueFinalCount.out';	
+	$self->options->{'final_output'}= $self->options->{'o'}.'/peakRescueFinalCount.out';	
 	if (-e $self->options->{'final_output'} ) { $log->debug("Outfile exists:".$self->options->{'final_output'}." Skipping <<< _runPeakrescue >>> step"); return 0;}
-  #my $combinedReadNameGeneName = $self->options->{'tmpdir_pipeline'}.'/tmpCombinedRNGN.tab';
+	# Dev: if we would like to analyse all reads in single pass
+  	#my $combinedReadNameGeneName = $self->options->{'tmpdir_pipeline'}.'/tmpCombinedRNGN.tab';
 	#my $cmd_cat = "cat ".$self->options->{'amb_rngn'}." ".$self->options->{'multimapped_rngn'}." > $combinedReadNameGeneName";
 	#PeakRescue::Base->_run_cmd($cmd_cat);
-	
-	# we can choose which file type to use 
-	 $self->_runReadToGeneAssignment($self->options->{'multimapped_rngn'},'multimappers');
-	 $self->_runReadToGeneAssignment($self->options->{'amb_rngn'},'ambiguous_unique');
-	 
-	 # if we would like to analyse all reads in single pass
-	 #$self->_runReadToGeneAssignment($combinedReadNameGeneName,'combined');
-	 
+	# -- Assign multimapped reads' proportions to genes
+	$log->info("Running probabilistic assignment of multimapped reads... ");
+	$self->_runReadToGeneAssignment($self->options->{'multimapped_rngn'},'multimappers');
+	$log->info("Probabilistic assignment of multimapped reads: completed.");
+	# -- Assign ambiguous uniquely mapped reads' proportions to genes
+	$log->info("Running probabilistic assignment of ambiguous uniquely mapped reads...");
+	$self->_runReadToGeneAssignment($self->options->{'amb_rngn'},'ambiguous_unique');
+	$log->info("Probabilistic assignment of ambiguous uniquely mapped reads: completed.");
+	# Dev: if we would like to analyse all reads in single pass
+	#$self->_runReadToGeneAssignment($combinedReadNameGeneName,'combined');
 }
 
 =head2 _runReadToGeneAssignment
@@ -360,13 +364,12 @@ sub _process_output {
   while (<$fh_data>) {
     chomp;
     my($gene, $uc, $uc_d, $mm_tr, $amb_tr, $amb_p, $mm_p, $length)=(split "\t", $_)[0,1,3,4,5,7,9,11];
-    my $final_count=($uc+$uc_d+$amb_p+$mm_p);
+    my $final_count=round($uc+$uc_d+$amb_p+$mm_p);
     $total_read_count+=$final_count;
     my $line;
     push(@$line,$uc,$uc_d,$amb_tr,$amb_p,$mm_tr,$mm_p,$final_count,$length);
     $all_data->{$gene}=$line;
   }
-  
   open(my $fh_final,'>', $self->options->{'final_output'});
 	#fpkm loop 
 	print $fh_final 
