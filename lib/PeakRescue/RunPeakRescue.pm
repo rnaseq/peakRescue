@@ -10,6 +10,7 @@ use File::Path qw(mkpath remove_tree);
 use Capture::Tiny qw(:all);
 use File::Basename;
 use File::Spec;
+use Math::Round qw(round);
 use Data::Dumper;
 use Log::Log4perl;
 Log::Log4perl->init("$Bin/../config/log4perl.gt.conf");
@@ -363,13 +364,12 @@ sub _process_output {
   while (<$fh_data>) {
     chomp;
     my($gene, $uc, $uc_d, $mm_tr, $amb_tr, $amb_p, $mm_p, $length)=(split "\t", $_)[0,1,3,4,5,7,9,11];
-    my $final_count=($uc+$uc_d+$amb_p+$mm_p);
+    my $final_count=round($uc+$uc_d+$amb_p+$mm_p);
     $total_read_count+=$final_count;
     my $line;
     push(@$line,$uc,$uc_d,$amb_tr,$amb_p,$mm_tr,$mm_p,$final_count,$length);
     $all_data->{$gene}=$line;
   }
-  
   open(my $fh_final,'>', $self->options->{'final_output'});
 	#fpkm loop 
 	print $fh_final 

@@ -19,10 +19,15 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 ##########LICENCE##########
 
-SOURCE_SAMTOOLS="https://github.com/samtools/samtools/archive/0.1.20.tar.gz"
+# get current directory
+INIT_DIR=`pwd`
+
+SOURCE_SAMTOOLS="https://github.com/samtools/samtools/archive/0.1.17.tar.gz"
 SOURCE_TABIX="https://github.com/sb43/tabix/archive/0.2.6.tar.gz" 
 SOURCE_BAMUTIL="https://github.com/statgen/bamUtil/archive/v1.0.13.tar.gz"
 SOURCE_BEDTOOLS="https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz"
+SOURCE_HTSEQ="$INIT_DIR/bin"
+SOURCE_R2G="$INIT_DIR/bin"
 
 done_message () {
     if [ $? -eq 0 ]; then
@@ -69,8 +74,6 @@ echo "compilation CPUs set to $CPU"
 
 INST_PATH=$1
 
-# get current directory
-INIT_DIR=`pwd`
 
 # cleanup inst_path
 mkdir -p $INST_PATH/bin
@@ -78,7 +81,6 @@ mkdir -p $INST_PATH/config
 cp $INIT_DIR/bin/readToGeneAssignment.py $INST_PATH/bin/
 cp $INIT_DIR/config/log4perl.gt.conf $INST_PATH/config/
 cp $INIT_DIR/config/peakrescue.ini	$INST_PATH/config
-cp -rp $INIT_DIR/bin/HTSeq-0.5.3p3_peakRescue	$INST_PATH/bin/
 cp -rp $INIT_DIR/datasets/	$INST_PATH/datasets/
 cp -rp $INIT_DIR/README.md	$INST_PATH/README.md
 
@@ -185,6 +187,46 @@ else
     cd $SETUP_DIR/$CURR_TOOL
     make
     cp -r bin/* $INST_PATH/bin/
+    touch $SETUP_DIR/$CURR_TOOL.success
+  ) >>$INIT_DIR/setup.log 2>&1
+fi
+done_message "" "Failed to build $CURR_TOOL."
+
+# Install HTSeq
+
+CURR_TOOL="HTSeq-0.5.3p3_peakRescue"
+CURR_SOURCE=$SOURCE_HTSEQ
+
+echo -n "Building $CURR_TOOL ..."
+if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then
+  echo -n " previously installed ..."
+else
+  (
+    set -ex
+		cp -r $CURR_SOURCE/$CURR_TOOL $SETUP_DIR
+    cd $SETUP_DIR/$CURR_TOOL
+    python setup.py install --user
+    cp -r $SETUP_DIR/$CURR_TOOL $INST_PATH/bin/
+  ) >>$INIT_DIR/setup.log 2>&1
+fi
+done_message "" "Failed to build $CURR_TOOL."
+
+# compile python code
+CURR_TOOL="R2G"
+CURR_SOURCE=$SOURCE_R2G
+
+echo -n "Building $CURR_TOOL ..."
+if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then
+  echo -n " previously installed ..."
+else
+  (
+    set -ex
+		mkdir -p $SETUP_DIR/$CURR_TOOL
+		cp -p $SOURCE_R2G/readToGeneAssignmentWithCython.pyx $SETUP_DIR/$CURR_TOOL/
+		cp -p $SOURCE_R2G/setup.py $SETUP_DIR/$CURR_TOOL/
+    cd $SETUP_DIR/$CURR_TOOL
+    python setup.py build_ext --inplace
+    cp -p $SETUP_DIR/$CURR_TOOL/readToGeneAssignmentWithCython.* $INST_PATH/bin/
     touch $SETUP_DIR/$CURR_TOOL.success
   ) >>$INIT_DIR/setup.log 2>&1
 fi
