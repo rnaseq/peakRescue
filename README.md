@@ -86,7 +86,7 @@ cd peakRescue-x.x.x/
 
 perl ./bin/runPeakRescue.pl -bam datasets/chr21.bam -gtf datasets/chr21.gtf.gz -g datasets/chr21.fa -alg clipover -o output
 
-#### Algorithm [-alg] option: currently one option provided to calculate read coverage:
+N.B. Algorithm [-alg] option: currently one algorithm supported to calculate read coverage:
 
 clipover - uses bamutils clipOverlap option to merge overlapping reads [ fast and gives similar results to GATK DepthOfCoverage on test data set ]
 
