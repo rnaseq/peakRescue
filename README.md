@@ -38,20 +38,6 @@ peakRescue was tested with cython version 0.22:
 
 https://pypi.python.org/pypi/Cython/0.22
 
-###### Please install following tools before running setup.sh script and make sure that the path is set in config/peakrescue.ini file[optional if using 'clipover' as coverage calculation option]
-
-GATK - https://github.com/broadgsa/gatk-protected [ required only if user want to use algorithm option - gatk for coverage calculation ] 
-
-https://github.com/broadgsa/gatk-protected/archive/2.8.tar.gz
-
-Picard - https://github.com/broadinstitute/picard [ required only if user want to use algorithm option - gatk for coverage calculation ] 
-
-https://github.com/broadinstitute/picard/releases/download/1.131/picard-tools-1.131.zip
-
-Samtools - http://samtools.sourceforge.net [ required only if user want to use algorithm option - mpielup for coverage calculation ]
-
-https://github.com/samtools/samtools/archive/1.2.tar.gz
-
 #### Automated installation using setup.sh script (see section "Installing PeakRescue" below)
 
 Bio::DB::Sam - http://search.cpan.org/~lds/Bio-SamTools/lib/Bio/DB/Sam.pm 
@@ -100,15 +86,7 @@ cd peakRescue-x.x.x/
 
 perl ./bin/runPeakRescue.pl -bam datasets/chr21.bam -gtf datasets/chr21.gtf.gz -g datasets/chr21.fa -alg clipover -o output
 
-#### choosing algorithm [-alg] option
+#### Algorithm [-alg] option: currently one option provided to calculate read coverage:
 
-clipover - uses bamutils clipOverlap option to merge overlapping reads [ fast and gives simialr results to gatk on test data set ]
-
-gatk - uses gatk DepthOfCoverage [ slow but accurate coverage for overlapping read pairs from same fragment ]
-
-mpileup - uses samtools v1.1 and above [ faster than gatk - propelry calculates coverage for overlapping reads ]
-
-###### currently under development 
-
-biodbsam - uses Bio::Db:Sam coverage method [ fastest but calculates overlapping read pairs twice] 
+clipover - uses bamutils clipOverlap option to merge overlapping reads [ fast and gives similar results to GATK DepthOfCoverage on test data set ]
 
