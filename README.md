@@ -100,7 +100,11 @@ cd peakRescue-x.x.x/
 
 perl ./bin/runPeakRescue.pl -bam datasets/chr21.bam -gtf datasets/chr21.gtf.gz -g datasets/chr21.fa -alg clipover -o output
 
-N.B. Algorithm [-alg] option: currently one algorithm supported to calculate read coverage:
-
-clipover - uses bamutils clipOverlap option to merge overlapping reads [ fast and gives similar results to GATK DepthOfCoverage on test data set ]
+#### choosing algorithm [-alg] option                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                               
+clipover - uses bamutils clipOverlap option to merge overlapping reads [ fast and gives simialr results to gatk on test data set ]                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                                               
+gatk - uses gatk DepthOfCoverage [ slow but accurate coverage for overlapping read pairs from same fragment ]                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                                               
+mpileup - uses samtools v1.1 and above [ faster than gatk - propelry calculates coverage for overlapping reads ]   
 
