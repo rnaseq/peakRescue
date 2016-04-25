@@ -38,6 +38,20 @@ peakRescue was tested with cython version 0.22:
 
 https://pypi.python.org/pypi/Cython/0.22
 
+###### Please install the following tools before running setup.sh script and make sure that the path is set in config/peakrescue.ini file [optional if using 'clipover' as coverage calculation option]                                                                                                                             
+                                                                                                                                                                                                                                                                                                                               
+GATK - https://github.com/broadgsa/gatk-protected [ required only if user wants to use algorithm option: gatk for coverage calculation ]                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                               
+https://github.com/broadgsa/gatk-protected/archive/2.8.tar.gz                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                                               
+Picard - https://github.com/broadinstitute/picard [ required only if user wants to use algorithm option: gatk for coverage calculation ]                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                               
+https://github.com/broadinstitute/picard/releases/download/1.131/picard-tools-1.131.zip                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                               
+Samtools - http://samtools.sourceforge.net [ required only if user wants to use algorithm option: mpielup for coverage calculation ]                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                               
+https://github.com/samtools/samtools/archive/1.2.tar.gz     
+
 #### Automated installation using setup.sh script (see section "Installing PeakRescue" below)
 
 Bio::DB::Sam - http://search.cpan.org/~lds/Bio-SamTools/lib/Bio/DB/Sam.pm 
@@ -64,7 +78,7 @@ Save ~/.bashrc & quit.
 
 Update environment variables with the following command: source ~/.bashrc. 
 
-Check the use of the required python version: python -V.
+Check the use of the correct python path and version: which python && python -V
 
 #### Download PeakRescue
 

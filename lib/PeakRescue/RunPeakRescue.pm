@@ -268,6 +268,7 @@ sub _get_peak {
   $getPeak_options->{'alg'}=$self->options->{'alg'};
  	my $peak=PeakRescue::GetPeak->new($getPeak_options);
   $self->options->{'peak_file'}=$peak->options->{'sample_peak'};
+  $self->options->{'tmpdir_peak'}=$peak->options->{'tmpdir_peak'};
   undef $peak;
 }
 

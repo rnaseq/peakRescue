@@ -21,10 +21,16 @@ const my $INI_FILE => "$Bin/../config/peakrescue.ini";
 # recursively cleanups folder and underlying substructure
 sub cleanup_dir {
     my ($self,$dir)=@_;
-    $log->debug("Unable to find cleanup dir:$dir") if(! -d $dir);
-    remove_tree($dir);
-    $log->debug("Unable to remove cleanup dir:$dir") if( -d $dir);
-    $log->debug("Dir: $dir cleaned successfully");
+    if(! -d $dir) { 
+	    $log->debug("Unable to find cleanup dir:$dir");
+    } else {
+	    remove_tree($dir);
+	    if( -d $dir) {
+		    $log->debug("Unable to remove cleanup dir:$dir");
+	    } else {
+		    $log->debug("Dir: $dir cleaned successfully");
+	    }
+    }
     return;
 }
 
