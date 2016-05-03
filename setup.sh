@@ -1,7 +1,7 @@
 
 
 ##########LICENCE##########
-# Copyright (c) 2014 Genome Research Ltd. & University of Edinburgh
+# Copyright (c) 2014,2015,2016 Genome Research Ltd. & University of Edinburgh
 #
 # This file is part of PeakRescue.
 #
@@ -285,9 +285,6 @@ echo -n "Installing PeakRescue ..."
 done_message "" " PeakRescue install failed."
 
 # cleanup all junk
-rm -rf $SETUP_DIR
-
-
 
 echo
 echo
