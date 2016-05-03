@@ -2,7 +2,7 @@
 BEGIN {
   use Cwd qw(abs_path);
   use File::Basename;
-  unshift (@INC,dirname(abs_path($0)).'/../lib');
+  $ENV{POSIXLY_CORRECT}=1;
   $SIG{__WARN__} = sub {warn $_[0] unless(( $_[0] =~ m/^Subroutine Tabix.* redefined/) || ($_[0] =~ m/^Use of uninitialized value \$buf/))};
 };
 
@@ -33,6 +33,7 @@ sub option_builder {
 	&GetOptions (
 					'h|help'    => \$opts{'h'},
 					'bam|sampleBam=s' => \$opts{'bam'},
+					'so|sortedByName=s' => \$opts{'so'},
 					'gtf|gtfFile=s' => \$opts{'gtf'},
 					'g|genomeFasta=s' => \$opts{'g'},
 					'alg|algorithm=s' => \$opts{'alg'},
@@ -46,14 +47,16 @@ sub option_builder {
 	if(defined $opts{'v'}){
 		my $version = PeakRescue->VERSION;
 		print "$version\n";
-		exit;
+		exit(0);
+	}
+	if(!defined $opts{'so'}) {
+		$opts{'so'}='no';
 	}
 	pod2usage(q{'-gtf' gtf file must be specified.}) unless(defined $opts{'gtf'}) ;
 	pod2usage(q{'-bam' bam file must be specified.}) unless(defined $opts{'bam'}) ;
 	pod2usage(q{'-g' genome file must be specified.}) unless(defined $opts{'g'}) ;
 	pod2usage(q{'-alg' at least one algorithm must be specified.}) unless(defined $opts{'alg'});
 	pod2usage(q{'-o' output location must be specified}) unless(defined $opts{'o'});
-
 	return \%opts;
 }
 
@@ -70,17 +73,19 @@ runPeakRescue.pl  -bam -gtf -g -o -alg [-st -h -v ]
 Required Options (bam and gtf and genome files must be defined):
 
   --sampleBam         (-bam) sample bam file 
+  --sortedByName      (-so) is input bam already sorted by name [yes,no :default is no] speedup analysis using name sorted bam file
   --gtfFile           (-gtf) genome gtf file 
   --genomeFasta       (-g) fasta reference genome file 
-  --algorithm         (-alg) algorithm to be use for coverage calculation [ biodbsam, clipover, mpileup, gatk ]
+  --algorithm         (-alg) algorithm for coverage calculation [ biodbsam, clipover, mpileup, gatk ]
   --stranded          (-st) Stranded data [yes,no,reverse : default no ]
   --outdir            (-o) outdir [ Path to output directory ]
   
-Optional :
+Optional:
+
   --help             (-h)  This message
   --version          (-v) displays version number of this software
 
   Example:
-      perl runPeakRescue.pl -bam test.bam -gtf test.gtf -g test.fa -alg clipover -o testdir
+      perl runPeakRescue.pl -bam test.bam -gtf test.gtf -g test.fa -alg clipover -o testdir -so yes
 =cut
 
