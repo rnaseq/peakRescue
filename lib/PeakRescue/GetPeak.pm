@@ -4,8 +4,8 @@ our $VERSION = PeakRescue->VERSION;
 
 use strict;
 
-use Bio::DB::Sam;
-use Tabix;
+use Bio::DB::HTS;
+use Bio::DB::HTS::Tabix;
 use FindBin qw($Bin);
 use List::Util qw(max min);
 use File::Path qw(mkpath remove_tree);
@@ -96,7 +96,7 @@ Inputs
 
 sub _get_bam_object {
 	my ($self,$bam_file)=@_;
-    my $bam = Bio::DB::Sam->new(-bam => $bam_file,
+    my $bam = Bio::DB::HTS->new(-bam => $bam_file,
 	 													-expand_flags => 1
 	 													#-split_splices => 1
 	 													);
@@ -107,7 +107,7 @@ sub _get_bam_object {
 
 sub _get_sub_bam_object {
 	my ($self,$bam_file)=@_;
-    my $bam = Bio::DB::Sam->new(-bam => $bam_file
+    my $bam = Bio::DB::HTS->new(-bam => $bam_file
 	 													#-expand_flags => 1,
 	 													#-split_splices => 1
 	 													);
@@ -130,6 +130,10 @@ sub _do_max_peak_calculation {
 	my($tabix_gt)=$self->_get_tabix_object($self->options->{'gt'});
 	my $peak_out=$self->options->{'o'}.'/'.$self->options->{'f'}.'_peak.txt';
 	$self->options->{'sample_peak'}=$peak_out;
+	
+	my $header_obj=$bam_object->header();
+	
+
 	#if (-e $self->options->{'sample_peak'} ) { $log->debug("Outfile exists:".$self->options->{'sample_peak'}."Skipping _do_max_peak_calculation step"); return;}
 	open(my $peak_fh, '>>', $peak_out);
 	# check progress required as this is long process if beaks in between can be restarted from where it left using progress file
@@ -143,13 +147,13 @@ sub _do_max_peak_calculation {
 	# end of progress check	
 	$log->logcroak("Unable to create tabix object") if (!$tabix);
 	# get chromosome names
-	my @chrnames=$tabix->getnames;
+	my $chrnames=$tabix->seqnames;
 	# get bam header to write
   my $bam_header=$bam_object->header;
 	# assign tmp file name
 	my $tmp_gene_file=$self->options->{'tmpdir_peak'}.'/tmp_gene.bam';
 	###
-	foreach my $chr (@chrnames) {
+	foreach my $chr (@$chrnames) {
 		next if (grep (/^$chr$/, @chr_analysed));
 		if( -s $progress_file) { $log->info("Progress file written [$progress_file], calculating peak for : $chr "); }
 		#last if $chr eq 'chr21';  
@@ -160,7 +164,7 @@ sub _do_max_peak_calculation {
 		#	$res = $tabix->query("chr$chr");
 		#}
 		#if(defined $res->get) {
-		while(my $record = $tabix->read($res)){		
+		while(my $record = $res->next){		
 			chomp;
 			my ($chr,$start,$end,$gene)=(split "\t", $record) [0,1,2,3];
 			$counter++;
@@ -171,7 +175,7 @@ sub _do_max_peak_calculation {
 				#$peak_data=();
 			}
 			#my($max_peak)=$self->_get_gene_bam_object($bam_object,$chr,$start,$end,$gene,$tabix_gt,$bam_header,$tmp_gene_file);
-			$peak_data->{$gene}=$self->_get_gene_bam_object($bam_object,$chr,$start,$end,$gene,$tabix_gt,$bam_header,$tmp_gene_file);
+			$peak_data->{$gene}=$self->_get_gene_bam_object($bam_object,$chr,$start,$end,$gene,$tabix_gt,$bam_header,$tmp_gene_file,$header_obj);
 		}
 		#}
 		#else{
@@ -203,11 +207,11 @@ sub _get_tabix_object {
 	my $tabix_obj;
 	my ($file_name,$dir_name,$suffix) = fileparse($bed_file,qr/\.[^.]*/);
   my $tmp_bed = $self->options->{'tmpdir_peak'}."/$file_name\_tabix.bed";
-	my $cmd = "$Bin/bedtools sort -i $bed_file | $Bin/bgzip >$tmp_bed.gz";
+	my $cmd = "bedtools sort -i $bed_file | bgzip >$tmp_bed.gz";
   PeakRescue::Base->_run_cmd($cmd);
-	$cmd="$Bin/tabix -p bed $tmp_bed.gz";	
+	$cmd="tabix -p bed $tmp_bed.gz";	
   PeakRescue::Base->_run_cmd($cmd);
-	$tabix_obj = new Tabix(-data => "$tmp_bed.gz");
+	$tabix_obj = Bio::DB::HTS::Tabix->new(filename => "$tmp_bed.gz");
 	$log->debug("Tabix object created successfully for $bed_file");
 	return $tabix_obj;
 }
@@ -223,11 +227,15 @@ Inputs
 =cut
 
 sub _get_gene_bam_object {
-	my ($self,$bam_object,$chr,$start,$end,$gene,$tabix_gt,$header_line,$tmp_gene_file)=@_;
+	my ($self,$bam_object,$chr,$start,$end,$gene,$tabix_gt,$header_line,$tmp_gene_file,$header_obj)=@_;
+	my $header=$header_obj->text;
+	
 	# create bio db bam object
-  my $bam = Bio::DB::Bam->open($tmp_gene_file,'w');
+  #my $bam = Bio::DB::HTSfile->open($tmp_gene_file,'w');
+  open my $gene_sam_fh, '>', $tmp_gene_file.'.sam';
+  print $gene_sam_fh $header;
 	#write header
-	$bam->header_write($header_line);
+	#$bam->header_write($header_line);
 # create temp file
 	my $read_flag=undef;
 	$bam_object->fetch("$chr:$start-$end", sub {
@@ -244,18 +252,32 @@ sub _get_gene_bam_object {
 		#	$read_flag=1;
 		#}
 		if($a->aux=~ m/XF:Z:$gene$/){
-			$bam->write1($a->{'align'});
+			#my ($tmp_aln,$stderr,@result)=capture{$header_obj->view1($a->{'align'})	};
+			 print $gene_sam_fh $a->tam_line."\n";
+			#print $gene_sam_fh "@result";
+			#$bam->write1($a->{'align'});
 			$read_flag=1;
 		}
 	});
-	undef $bam;
+	#undef $bam;
 	# read flag is undefined 
 	if (!$read_flag) {
 		#print "No reads for :  $gene\n";
 		return "0";
 	} 
-	Bio::DB::Bam->index_build($tmp_gene_file);
+	
+	# create sam to bam 
+	my $cmd="$Bin/samtools view -bS $tmp_gene_file.sam >$tmp_gene_file";
+	PeakRescue::Base->_run_cmd($cmd);
+	$cmd="$Bin/samtools index $tmp_gene_file";
+	PeakRescue::Base->_run_cmd($cmd);
+	#Bio::DB::Bam::HTSfile->index_build($tmp_gene_file);
 	#name sorted bam required for clipOver
+	close $gene_sam_fh;
+	
+	
+
+	
 	
 	#----------biodbsam------------------- Option1
 	if($self->options->{'alg'} eq 'biodbsam') {
@@ -272,7 +294,9 @@ sub _get_gene_bam_object {
 	  # create tmp file
 		my $tmp_gene_sorted=$self->options->{'tmpdir_peak'}.'/tmp_gene_name_sorted';
 		# read name sorted bam file
-		Bio::DB::Bam->sort_core(1,$tmp_gene_file,$tmp_gene_sorted);
+		$cmd="$Bin/samtools sort -n $tmp_gene_file >$tmp_gene_sorted.bam";
+		PeakRescue::Base->_run_cmd($cmd);
+		#Bio::DB::HTSfile->sort_core(1,$tmp_gene_file,$tmp_gene_sorted.'.bam');
 		my($clipped_bam)=$self->_run_clipOver("$tmp_gene_sorted.bam");
 		my ($gene_bam)=$self->_get_sub_bam_object($clipped_bam);	
 		my ($coverage) = $gene_bam->features(-type => 'coverage', -seq_id => $chr, -start => $start, -end => $end);
@@ -284,7 +308,7 @@ sub _get_gene_bam_object {
 	#-------------mpileup------------------Option3
 	elsif ($self->options->{'alg'} eq 'mpileup') {	
   	#need samtools 1.1 or above which takes care of overlapping read pairs... 
-		my $cmd= $self->cfg_path->{'SAMTOOLS_1'}."/samtools mpileup $tmp_gene_file -d $MAX_PILEUP_DEPTH -A -f ".$self->options->{'g'}. " -r $chr:$start-$end --no-BAQ ";
+		my $cmd= "$Bin/samtools mpileup $tmp_gene_file -d $MAX_PILEUP_DEPTH -A -f ".$self->options->{'g'}. " -r $chr:$start-$end --no-BAQ ";
 		my($out)=PeakRescue::Base->_run_cmd($cmd);
 		my ($max)=$self->_parse_pileup($out);
 		return $max;
@@ -296,6 +320,8 @@ sub _get_gene_bam_object {
 	}
 	
 }
+
+
 
 =head2  _run_clipOver
 run bamutils clipover to clip overlapping read pairs to calculate coverage peak for a gene
@@ -311,8 +337,12 @@ sub _run_clipOver {
 	my $cmd="$Bin/samtools view -h $gene_bam | $Bin/bam clipOverlap --readName --in - --out $tmp_gene_clipped.bam";
   PeakRescue::Base->_run_cmd($cmd);	
 	# create coordinate sorted bam ...
-	Bio::DB::Bam->sort_core(0,$tmp_gene_clipped.'.bam',$tmp_gene_clipped.'_coord');
-	Bio::DB::Bam->index_build($tmp_gene_clipped.'_coord.bam');
+	$cmd="$Bin/samtools sort $tmp_gene_clipped.bam >$tmp_gene_clipped".'_coord.bam';
+	PeakRescue::Base->_run_cmd($cmd);
+	#Bio::DB::HTSfile->sort_core(0,$tmp_gene_clipped.'.bam',$tmp_gene_clipped.'_coord');
+	#Bio::DB::HTSfile->index_build($tmp_gene_clipped.'_coord.bam');
+	$cmd="$Bin/samtools index $tmp_gene_clipped".'_coord.bam';
+	PeakRescue::Base->_run_cmd($cmd);
 	return $tmp_gene_clipped.'_coord.bam';
 }
 
@@ -364,11 +394,11 @@ sub _get_intervals{
 	my $tmp_gt_file=$self->options->{'tmpdir_peak'}.'/tmp.list';
 	open(my $gt_fh,'>',$tmp_gt_file);
 		my $res=undef;
-		$res = $tabix->query($chr,$start,$end);
+		$res = $tabix->query($chr.':'.$start.'-'.$end);
 		if(!defined $res) {
-      $res = $tabix->query("chr$chr",$start,$end);
+      $res = $tabix->query('chr'.$chr.':'.$start.'-'.$end);
 		}
-	while(my $record = $tabix->read($res)){		
+	while(my $record = $res->next){		
 		print $gt_fh $record;
 	}
 	close $gt_fh;

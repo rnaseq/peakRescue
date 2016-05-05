@@ -22,8 +22,8 @@
 # get current directory
 INIT_DIR=`pwd`
 
-SOURCE_SAMTOOLS="https://github.com/samtools/samtools/archive/0.1.17.tar.gz"
-SOURCE_TABIX="https://github.com/sb43/tabix/archive/0.2.6.tar.gz" 
+BIODBHTS_INSTALL="https://raw.githubusercontent.com/Ensembl/Bio-HTS/master/INSTALL.pl"
+SOURCE_SAMTOOLS="https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2"
 SOURCE_BAMUTIL="https://github.com/statgen/bamUtil/archive/v1.0.13.tar.gz"
 SOURCE_BEDTOOLS="https://bedtools.googlecode.com/files/BEDTools.v2.17.0.tar.gz"
 SOURCE_HTSEQ="$INIT_DIR/bin"
@@ -64,6 +64,16 @@ get_distro () {
   tar --strip-components 1 -C $1 -xf $1.tar
 }
 
+get_file () {
+# output, source
+  if hash curl 2>/dev/null; then
+    curl --insecure -sS -o $1 -L $2
+  else
+    wget -nv -O $1 $2
+  fi
+}
+
+
 if [ "$#" -ne "1" ] ; then
   echo "Please provide an installation path  such as /software/peakrescue"
   exit 0
@@ -96,7 +106,6 @@ PERLARCH=$PERLROOT/$ARCHNAME
 export PERL5LIB="$PERLROOT:$PERLARCH"
 
 # log information about this system
-(
     echo '============== System information ===='
     set -x
     lsb_release -a
@@ -106,19 +115,16 @@ export PERL5LIB="$PERLROOT:$PERLARCH"
     grep MemTotal /proc/meminfo
     set +x
     echo
-) >>$INIT_DIR/setup.log 2>&1
 
 perlmods=( "File::ShareDir" "File::ShareDir::Install" )
 
 set -e
 for i in "${perlmods[@]}" ; do
   echo -n "Installing build prerequisite $i..."
-  (
     set -x
     $INIT_DIR/bin/cpanm -v --mirror http://cpan.metacpan.org -l $INST_PATH $i
     set +x
     echo; echo
-  ) >>$INIT_DIR/setup.log 2>&1
   done_message "" "Failed during installation of $i."
 done
 
@@ -128,37 +134,12 @@ mkdir -p $SETUP_DIR
 
 cd $SETUP_DIR
 
-CURR_TOOL="tabix-0.2.6"
-CURR_SOURCE=$SOURCE_TABIX
-echo -n "Building $CURR_TOOL ..."
-if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then
-  echo -n " previously installed ..."
-else
-  (
-    set -ex
-    get_distro $CURR_TOOL $CURR_SOURCE
-    cd $SETUP_DIR/$CURR_TOOL
-    make -j$CPU
-    cp tabix $INST_PATH/bin/.
-    cp bgzip $INST_PATH/bin/.
-    cd perl
-    perl Makefile.PL INSTALL_BASE=$INST_PATH
-    make
-    make test
-    make install
-    touch $SETUP_DIR/$CURR_TOOL.success
-  ) >>$INIT_DIR/setup.log 2>&1
-fi
-done_message "" "Failed to build $CURR_TOOL."
-
-
 CURR_TOOL="bamUtil-1.0.13"
 CURR_SOURCE=$SOURCE_BAMUTIL
 echo -n "Building $CURR_TOOL ..."
 if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then
   echo -n " previously installed ..."
 else
-  (
     set -ex
     get_distro $CURR_TOOL $CURR_SOURCE
     cd $SETUP_DIR/$CURR_TOOL
@@ -166,11 +147,8 @@ else
     make 
     make install INSTALLDIR=$INST_PATH/bin
     touch $SETUP_DIR/$CURR_TOOL.success
-  ) >>$INIT_DIR/setup.log 2>&1
 fi
 done_message "" "Failed to build $CURR_TOOL."
-
-export PATH="$INST_PATH/bin:$PATH"
 
 # Install bedtools 
 
@@ -181,14 +159,12 @@ echo -n "Building $CURR_TOOL ..."
 if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then
   echo -n " previously installed ..."
 else
-  (
     set -ex
     get_distro $CURR_TOOL $CURR_SOURCE
     cd $SETUP_DIR/$CURR_TOOL
     make
     cp -r bin/* $INST_PATH/bin/
     touch $SETUP_DIR/$CURR_TOOL.success
-  ) >>$INIT_DIR/setup.log 2>&1
 fi
 done_message "" "Failed to build $CURR_TOOL."
 
@@ -201,13 +177,12 @@ echo -n "Building $CURR_TOOL ..."
 if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then
   echo -n " previously installed ..."
 else
-  (
     set -ex
 		cp -r $CURR_SOURCE/$CURR_TOOL $SETUP_DIR
     cd $SETUP_DIR/$CURR_TOOL
     python setup.py install --user
     cp -r $SETUP_DIR/$CURR_TOOL $INST_PATH/bin/
-  ) >>$INIT_DIR/setup.log 2>&1
+    touch $SETUP_DIR/$CURR_TOOL.success
 fi
 done_message "" "Failed to build $CURR_TOOL."
 
@@ -219,7 +194,6 @@ echo -n "Building $CURR_TOOL ..."
 if [ -e $SETUP_DIR/$CURR_TOOL.success ]; then
   echo -n " previously installed ..."
 else
-  (
     set -ex
 		mkdir -p $SETUP_DIR/$CURR_TOOL
 		cp -p $SOURCE_R2G/readToGeneAssignmentWithCython.pyx $SETUP_DIR/$CURR_TOOL/
@@ -228,35 +202,42 @@ else
     python setup.py build_ext --inplace
     cp -p $SETUP_DIR/$CURR_TOOL/readToGeneAssignmentWithCython.* $INST_PATH/bin/
     touch $SETUP_DIR/$CURR_TOOL.success
-  ) >>$INIT_DIR/setup.log 2>&1
 fi
 done_message "" "Failed to build $CURR_TOOL."
 
 export PATH="$INST_PATH/bin:$PATH"
 
-# need to build samtools as has to be compiled in correct way for perl bindings
-# does not deploy binary in this form
+# tabix and bgzip now included with samtools
+ 
 echo -n "Building samtools ..."
 if [ -e $SETUP_DIR/samtools.success ]; then
   echo -n " previously installed ...";
 else
   cd $SETUP_DIR
-  (
   set -x
-  if [ ! -e samtools ]; then
-    get_distro "samtools" $SOURCE_SAMTOOLS
-    perl -i -pe 's/^CFLAGS=\s*/CFLAGS=-fPIC / unless /\b-fPIC\b/' samtools/Makefile
-  fi
-  make -C samtools -j$CPU
-	cp $SETUP_DIR/samtools/samtools $INST_PATH/bin/
-  touch $SETUP_DIR/samtools.success
-  )>>$INIT_DIR/setup.log 2>&1
+    get_distro "samtools" $SOURCE_SAMTOOLS &&
+		cd samtools &&
+		./configure --enable-plugins --enable-libcurl --prefix=$INST_PATH &&
+		make all all-htslib &&
+		make install install-htslib &&
+		touch $SETUP_DIR/samtools.success
 fi
 done_message "" "Failed to build samtools."
 
-export SAMTOOLS="$SETUP_DIR/samtools"
+echo -n "Building Bio::DB::HTS ..."
 
-export PATH="$INST_PATH/bin:$PATH"
+if [ -e $SETUP_DIR/biohts.success ]; then
+  echo -n " previously installed ...";
+else
+  cd $SETUP_DIR &&
+  $INIT_DIR/bin/cpanm --mirror http://cpan.metacpan.org --notest -l $INST_PATH Module::Build Bio::Root::Version &&
+  get_file "INSTALL.pl" $BIODBHTS_INSTALL &&
+  perl -I $PERL5LIB INSTALL.pl --prefix $INST_PATH --static &&
+  rm -f BioDbHTS_INSTALL.pl &&
+  touch $SETUP_DIR/biohts.success
+fi
+
+done_message "" "Failed to build Bio::DB:HTS."
 
 cd $INIT_DIR
 

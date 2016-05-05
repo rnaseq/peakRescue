@@ -2,7 +2,7 @@ package PeakRescue::RunPeakRescue;
 use PeakRescue;
 our $VERSION = PeakRescue->VERSION;
 
-use Bio::DB::Sam;
+use Bio::DB::HTS;
 use strict;
 use FindBin qw($Bin);
 use List::Util qw(max min);
@@ -122,8 +122,8 @@ sub _run_htseq {
 	$self->options->{'htseq_count'}=$self->options->{'tmpdir_pipeline'}.'/'.$self->options->{'f'}.'_htseq_count.out';
 	if (-e $self->options->{'htseq_count'} ) { $log->debug("Outfile exists:".$self->options->{'htseq_count'}." Skipping <<< _run_htseq >>> step"); return;}
 	# requires read name sorted sam file...
-	my $cmd = "$Bin/samtools sort -on ".$self->options->{'bam'}.' '.$self->options->{'tmpdir_pipeline'}.'/tmpsort >'.$self->options->{'tmpdir_pipeline'}.'/tmpsort.bam';
-	if($self->options->{'so'}=~/y/ig){
+	my $cmd = "samtools sort -on ".$self->options->{'bam'}.' '.$self->options->{'tmpdir_pipeline'}.'/tmpsort >'.$self->options->{'tmpdir_pipeline'}.'/tmpsort.bam';
+	if($self->options->{'so'}=~/yes/ig){
 		$log->debug("Input file is sorted on name counting reads ......");
 		$tmp_bam_file_name=$self->options->{'bam'};	
   }elsif(-s $self->options->{'tmpdir_pipeline'}.'/tmpsort.bam' ){
@@ -134,7 +134,7 @@ sub _run_htseq {
 		PeakRescue::Base->_run_cmd($cmd);
 		$tmp_bam_file_name=$self->options->{'tmpdir_pipeline'}."/tmpsort.bam";
   }
-	  $cmd = "$Bin/samtools view $tmp_bam_file_name | ".
+	  $cmd = "samtools view $tmp_bam_file_name | ".
 		"python ".
 		" $Bin/HTSeq-0.5.3p3_peakRescue/HTSeq/scripts/count_peakRescue_step1.py ".
 			" --mode=union ".
@@ -207,14 +207,14 @@ sub _process_sam {
 	if (-e $self->options->{'kayrotypic'} ) { $log->debug("Outfile exists:".$self->options->{'kayrotypic'}." Skipping <<< _process_sam >>> step"); return;}
   
 	# add disambiguated reads containing additional XF:Z tags to original sam with updated 
- 	my $cmd = "$Bin/samtools view -H ".
+ 	my $cmd = "samtools view -H ".
  	   $self->options->{'bam'}.
- 	  " | cat -  ".$self->options->{'disambiguated_sam'}. " ".$self->options->{'htseq_sam'}." | "."$Bin/samtools view -bS -| ".
-		"$Bin/samtools sort -o - ".$self->options->{'tmpdir_pipeline'}."/tmpsort_2 >$tmp_combined_bam";  # took 19 min to create 1.6GB file
+ 	  " | cat -  ".$self->options->{'disambiguated_sam'}. " ".$self->options->{'htseq_sam'}." | "."samtools view -bS -| ".
+		"samtools sort -o - ".$self->options->{'tmpdir_pipeline'}."/tmpsort_2 >$tmp_combined_bam";  # took 19 min to create 1.6GB file
    
     if (! -e $tmp_combined_bam ) {
     	PeakRescue::Base->_run_cmd($cmd);
-    	Bio::DB::Bam->index_build($tmp_combined_bam);
+    	Bio::DB::HTSfile->index_build($tmp_combined_bam);
     }
   	
     
@@ -231,7 +231,7 @@ sub _process_sam {
 		
 		if ( ! -e $self->options->{'kayrotypic'} && $self->options->{'alg'} eq 'gatk') {								
 			PeakRescue::Base->_run_cmd($cmd);
-			Bio::DB::Bam->index_build($self->options->{'kayrotypic'});
+			Bio::DB::HTSfile->index_build($self->options->{'kayrotypic'});
 		}
 		else {
 			$self->options->{'kayrotypic'}=$tmp_combined_bam;
@@ -398,8 +398,6 @@ sub _process_output {
 	close($fh_final,$fh_data);
 
 }
-
-
 
 sub options {
 shift->{'options'};

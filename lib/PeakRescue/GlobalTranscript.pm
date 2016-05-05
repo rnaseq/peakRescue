@@ -9,7 +9,7 @@ BEGIN {
 
 use strict;
 
-use Tabix;
+use Bio::DB::HTS::Tabix;
 use File::Path qw(mkpath remove_tree);
 use File::Basename;
 use File::Spec;
@@ -98,7 +98,7 @@ sub _create_sorted_gtf_tabix_object {
 	my $gtf_file=$self->options->{'gtf'};
 	my $gtf_file_no_ext=$self->options->{'f'};
 	$log->debug("Using GTF file: ".$gtf_file);
-	my $cmd = "zless $gtf_file | sort -k1,1 -k4,4n | $Bin/bgzip  >$gtf_file_no_ext\_sorted.gz";
+	my $cmd = "zless $gtf_file | sort -k1,1 -k4,4n | bgzip  >$gtf_file_no_ext\_sorted.gz";
 	#check for bgzip and index file...
 	if (-e "$gtf_file_no_ext\_sorted.gz" && -e "$gtf_file_no_ext\_sorted.gz.tbi" ) 
 	{
@@ -108,12 +108,12 @@ sub _create_sorted_gtf_tabix_object {
 	else{
 		$log->debug("Creting sorted gtf and tabix index file");
 	  PeakRescue::Base->_run_cmd($cmd);
-	  $cmd="$Bin/tabix -p gff $gtf_file_no_ext\_sorted.gz"; 
+	  $cmd="tabix -p gff $gtf_file_no_ext\_sorted.gz"; 
 	  PeakRescue::Base->_run_cmd($cmd);
 	}
 	#create Tabix object...
 	$log->debug("Tabix indexed gtf file exits, Creating Tabix object");
-	my $tabix_obj = new Tabix(-data => "$gtf_file_no_ext\_sorted.gz");
+	my $tabix_obj = Bio::DB::HTS::Tabix->new(filename => "$gtf_file_no_ext\_sorted.gz");
 	$log->debug("Tabix object created successfully");
 	$self->{'tabix_obj'}=$tabix_obj;
 	return;
@@ -172,11 +172,11 @@ sub _check_tabix_overlap {
 			$log->debug("Processing all chromosomes");
 	}
 	# get chromosome names
-	my @chrnames=$tabix->getnames;
+	my $chrnames=$tabix->seqnames;
 	###
 	# Querying is ALWAYS half open regardless of underlying file type [ i.e zero start and 1 end -- same as bed file  ]
 	###
-	foreach my $chr (@chrnames) {
+	foreach my $chr (@$chrnames) {
 		# use user provided chromosome names
 		if($self->options->{'chr'}) {
 			#next if !{map { $_ => 1 } split('\n', "@chr_to_analyse")}->{"$chr"};
@@ -186,7 +186,7 @@ sub _check_tabix_overlap {
 			next if (grep (/^$chr$/, @std_chr) ne 1);
 		} 
 		my $res = $tabix->query($chr);
-		while(my $record = $tabix->read($res)){
+		while(my $record = $res->next){
 		# the returned data is the ORIGINAL string from the file
 			my ($chr,$exon,$start,$stop,$line) = (split '\t', $record) [0,2,3,4,8];
 			next if $exon ne 'exon';
@@ -290,11 +290,11 @@ sub _merge_intervals {
 	my ($self,$gene,$tmp_file)=@_;
 	my ($g_start, $g_end, $chr, $start, $stop);
 	# merge intervals to get global transcript intervals...
-	my $cmd="$Bin/mergeBed -i $tmp_file";
+	my $cmd="mergeBed -i $tmp_file";
 	my ($out,$stderr,$exit) = capture {system($cmd)};
 	if($exit){ 
 		$log->debug("Unable to perform mergeBed opertaion for $gene $stderr Trying to sort intervals");
-		$cmd="$Bin/sortBed -i $tmp_file | $Bin/mergeBed -i - ";
+		$cmd="sortBed -i $tmp_file | mergeBed -i - ";
 	  ($out) = PeakRescue::Base->_run_cmd($cmd);
 	}
 	if($exit){ 
@@ -344,8 +344,8 @@ sub _get_unique_regions {
 	
 	my $tabix=$self->tabix_obj;
 	#extract all the GTF lines in a interval
-	my $res = $tabix->query($chr,$start,$stop);
-		while(my $record = $tabix->read($res)){	
+	my $res = $tabix->query($chr.':'.$start.'-'.$stop);
+		while(my $record = $res->next){	
 		  my ($chr,$exon,$start,$stop,$line) = (split '\t', $record) [0,2,3,4,8];
 			next if $exon ne 'exon';
 			my ($tmp_gene)= (split '\"', $line) [1];
@@ -361,11 +361,11 @@ sub _get_unique_regions {
 			my($fh_sorted)=PeakRescue::Base->_create_fh([$tmp_sorted_bed],1);
 			my $fh_soretd_str=@$fh_sorted[0];
 			print $fh_soretd_str $output;
-			my $cmd="$Bin/subtractBed -a $tmp_sorted_bed -b $tmp_overlap_file | $Bin/mergeBed -i - ";
+			my $cmd="subtractBed -a $tmp_sorted_bed -b $tmp_overlap_file | mergeBed -i - ";
 			my($out,$stderr,$exit) = capture {system($cmd)};
 			if($exit){ 
 				$log->debug("Unable to perform subtractBed opertaion for $gene $stderr Trying to sort Overlapped interval file file");
-	      $cmd="$Bin/sortBed $tmp_overlap_file | $Bin/subtractBed -a $tmp_sorted_bed -b - | $Bin/mergeBed -i - ";
+	      $cmd="sortBed $tmp_overlap_file | subtractBed -a $tmp_sorted_bed -b - | mergeBed -i - ";
 				($out) = PeakRescue::Base->_run_cmd($cmd);
 			}
 			close($fh_soretd_str);

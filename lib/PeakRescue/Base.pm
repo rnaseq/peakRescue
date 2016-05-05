@@ -3,7 +3,6 @@ use PeakRescue;
 our $VERSION = PeakRescue->VERSION;
 
 use strict;
-use Tabix;
 use File::Path qw(mkpath remove_tree);
 use File::Basename;
 use File::Spec;

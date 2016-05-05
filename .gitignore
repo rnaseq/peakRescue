@@ -1,0 +1,12 @@
+blib
+pm_to_blib
+test.bed
+*.log
+test*
+*.out
+test*
+out*
+MYMETA*
+Makefile
+install_tmp
+test_dir
